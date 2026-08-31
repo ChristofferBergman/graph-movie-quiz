@@ -4,6 +4,7 @@ import com.graphragmoviequiz.api.question.CurrentQuestion;
 import com.graphragmoviequiz.api.question.Clue;
 import com.graphragmoviequiz.api.question.ClueRepository;
 import com.graphragmoviequiz.api.question.QuestionRepository;
+import com.graphragmoviequiz.api.highscore.HighScoreRepository;
 import com.graphragmoviequiz.api.web.model.TokenType;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -34,6 +35,9 @@ class GameServiceTests {
 
     @Mock
     private ClueRepository clues;
+
+    @Mock
+    private HighScoreRepository highScores;
 
     @Test
     void createsGameAndFirstQuestion() {
@@ -76,7 +80,7 @@ class GameServiceTests {
     }
 
     @Test
-    void incorrectAnswerEndsAndDeletesGame() {
+    void incorrectAnswerEndsGameAndChecksHighScoreQualification() {
         var game = gameWithScore(2);
         when(games.findById(game.id())).thenReturn(Optional.of(game));
         when(questions.findAnswerForGame(game.id())).thenReturn(Optional.of("Diego Luna"));
@@ -88,7 +92,7 @@ class GameServiceTests {
         assertThat(response.score()).isEqualTo(2);
         assertThat(response.correctAnswer()).isEqualTo("Diego Luna");
         assertThat(response.game()).isNull();
-        verify(games).deleteById(game.id());
+        verify(highScores).finishGame(game.id());
         verify(questions, never()).replaceForGame(game.id());
     }
 
@@ -157,7 +161,7 @@ class GameServiceTests {
     }
 
     private GameService service() {
-        return new GameService(games, questions, clues);
+        return new GameService(games, questions, clues, highScores);
     }
 
     private Game gameWithScore(int score) {

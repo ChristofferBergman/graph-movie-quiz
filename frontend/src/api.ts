@@ -28,6 +28,11 @@ export interface Clue {
   actors: string[]
 }
 
+export interface HighScoreEntry {
+  player: string
+  score: number
+}
+
 export interface SubmitAnswerResponse {
   correct: boolean
   score: number
@@ -112,4 +117,8 @@ export function consumeHelpToken(gameId: string, type: TokenType): Promise<Game>
 
 export function loadClue(gameId: string, type: ClueType): Promise<Clue> {
   return request<Clue>(`/api/v1/games/${gameId}/clues/${type}`)
+}
+
+export function loadHighScores(): Promise<HighScoreEntry[]> {
+  return request<HighScoreEntry[]>('/api/v1/high-scores')
 }

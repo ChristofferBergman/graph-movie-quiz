@@ -35,10 +35,10 @@
 [x] Implement clue-card zooming
 
 *** Phase 6 - High scores ***
-[ ] Implement high-score qualification and storage
-[ ] Make high-score updates safe when games finish concurrently
-[ ] Implement the high-score API endpoint
-[ ] Add the high-score list to the frontend
+[x] Implement high-score qualification and storage
+[x] Make high-score updates safe when games finish concurrently
+[x] Implement the high-score API endpoint
+[x] Add the high-score list to the frontend
 
 *** Phase 7 - UI completion and deployment ***
 [ ] Complete the visual design based on the mockups and supplied assets

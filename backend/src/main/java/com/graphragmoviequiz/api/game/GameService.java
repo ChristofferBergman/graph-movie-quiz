@@ -5,6 +5,7 @@ import com.graphragmoviequiz.api.error.ApiException;
 import com.graphragmoviequiz.api.question.ClueRepository;
 import com.graphragmoviequiz.api.question.CurrentQuestion;
 import com.graphragmoviequiz.api.question.QuestionRepository;
+import com.graphragmoviequiz.api.highscore.HighScoreRepository;
 import com.graphragmoviequiz.api.web.model.GameResponse;
 import com.graphragmoviequiz.api.web.model.ClueResponse;
 import com.graphragmoviequiz.api.web.model.QuestionResponse;
@@ -23,11 +24,18 @@ public class GameService {
     private final GameRepository games;
     private final QuestionRepository questions;
     private final ClueRepository clues;
+    private final HighScoreRepository highScores;
 
-    public GameService(GameRepository games, QuestionRepository questions, ClueRepository clues) {
+    public GameService(
+            GameRepository games,
+            QuestionRepository questions,
+            ClueRepository clues,
+            HighScoreRepository highScores
+    ) {
         this.games = games;
         this.questions = questions;
         this.clues = clues;
+        this.highScores = highScores;
     }
 
     public GameResponse createGame(String player) {
@@ -49,7 +57,7 @@ public class GameService {
                 .orElseThrow(() -> new IllegalStateException("Game has no current answer."));
 
         if (!correctAnswer.equalsIgnoreCase(name)) {
-            games.deleteById(gameId);
+            highScores.finishGame(gameId);
             return new SubmitAnswerResponse(false, game.score(), correctAnswer, null);
         }
 

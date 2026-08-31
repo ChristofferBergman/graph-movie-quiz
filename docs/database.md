@@ -89,4 +89,8 @@ MATCH (:HighScore)-->(g:Game)
 RETURN g.player AS Player, g.score AS Score ORDER BY g.score DESC LIMIT 3
 ```
 
-There is only ever one (:HighScore) node. If it doesn't exist, create it when needed.
+There is only ever one `(:HighScore {id: 'global'})` node. If it doesn't exist,
+create it when needed. A uniqueness constraint on `HighScore.id` and a write to
+the singleton node serialize concurrent game completions before qualification is
+calculated. A score must be strictly higher than the current third-place score
+to replace it; equal scores do not qualify.

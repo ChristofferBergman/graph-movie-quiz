@@ -16,6 +16,7 @@ import {
   createGame,
   findActorSuggestions,
   loadGame,
+  loadHighScores,
   loadClue,
   submitAnswer,
   consumeHelpToken,
@@ -24,6 +25,7 @@ import {
   type Clue,
   type ClueType,
   type Game,
+  type HighScoreEntry,
   type TokenType,
 } from './api'
 import clueBack from './assets/images/ClueBack.png'
@@ -36,6 +38,7 @@ function App() {
   const [game, setGame] = useState<Game | null>(null)
   const [finalScore, setFinalScore] = useState<number | null>(null)
   const [correctAnswer, setCorrectAnswer] = useState<string | null>(null)
+  const [highScores, setHighScores] = useState<HighScoreEntry[]>([])
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(() =>
     Boolean(localStorage.getItem(GAME_ID_STORAGE_KEY)),
@@ -48,8 +51,12 @@ function App() {
 
     let isActive = true
     void loadGame(storedGameId)
-      .then((loadedGame) => {
-        if (isActive) setGame(loadedGame)
+      .then(async (loadedGame) => {
+        const loadedHighScores = await getHighScoresSafely()
+        if (isActive) {
+          setGame(loadedGame)
+          setHighScores(loadedHighScores)
+        }
       })
       .catch((requestError: unknown) => {
         if (!isActive) return
@@ -82,8 +89,10 @@ function App() {
 
     try {
       const createdGame = await createGame(player)
+      const loadedHighScores = await getHighScoresSafely()
       localStorage.setItem(GAME_ID_STORAGE_KEY, createdGame.id)
       setGame(createdGame)
+      setHighScores(loadedHighScores)
       setFinalScore(null)
       setCorrectAnswer(null)
     } catch (requestError) {
@@ -106,6 +115,7 @@ function App() {
       if (result.correct && result.game) {
         setGame(result.game)
       } else {
+        setHighScores(await getHighScoresSafely())
         localStorage.removeItem(GAME_ID_STORAGE_KEY)
         setFinalScore(result.score)
         setCorrectAnswer(result.correctAnswer)
@@ -172,13 +182,18 @@ function App() {
             isLoading={isLoading}
             onAnswer={handleAnswer}
             onUseToken={handleToken}
+            highScores={highScores}
           />
         ) : finalScore !== null ? (
-          <GameOverScreen
-            score={finalScore}
-            correctAnswer={correctAnswer}
-            onRestart={handleRestart}
-          />
+          <div className="game-layout game-over-layout">
+            <HighScorePanel entries={highScores} />
+            <GameOverScreen
+              score={finalScore}
+              correctAnswer={correctAnswer}
+              onRestart={handleRestart}
+            />
+            <div aria-hidden="true" />
+          </div>
         ) : (
           <StartScreen
             isLoading={isLoading}
@@ -264,9 +279,16 @@ interface GameScreenProps {
   isLoading: boolean
   onAnswer: (name: string) => Promise<void>
   onUseToken: (type: TokenType) => Promise<void>
+  highScores: HighScoreEntry[]
 }
 
-function GameScreen({ game, isLoading, onAnswer, onUseToken }: GameScreenProps) {
+function GameScreen({
+  game,
+  isLoading,
+  onAnswer,
+  onUseToken,
+  highScores,
+}: GameScreenProps) {
   const [answer, setAnswer] = useState('')
   const [suggestions, setSuggestions] = useState<ActorSuggestion[]>([])
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false)
@@ -309,7 +331,7 @@ function GameScreen({ game, isLoading, onAnswer, onUseToken }: GameScreenProps) 
 
   return (
     <div className="game-layout">
-      <div className="game-sidebar game-sidebar--left" aria-hidden="true" />
+      <HighScorePanel entries={highScores} />
       <div className="game-screen">
         <Typography variant="body-large">
           Score (completed questions): {game.score}
@@ -373,6 +395,27 @@ function GameScreen({ game, isLoading, onAnswer, onUseToken }: GameScreenProps) 
       </div>
       <TokenPanel game={game} isLoading={isLoading} onUseToken={onUseToken} />
     </div>
+  )
+}
+
+function HighScorePanel({ entries }: { entries: HighScoreEntry[] }) {
+  return (
+    <aside className="high-score-panel" aria-label="High scores">
+      <Typography variant="body-medium">High scores</Typography>
+      {entries.length === 0 ? (
+        <Typography variant="body-small">No scores yet</Typography>
+      ) : (
+        <ol className="high-score-list">
+          {entries.map((entry, index) => (
+            <li key={`${entry.player}-${entry.score}-${index}`}>
+              <span className="high-score-rank">{index + 1}</span>
+              <span className="high-score-player">{entry.player}</span>
+              <span>{entry.score}</span>
+            </li>
+          ))}
+        </ol>
+      )}
+    </aside>
   )
 }
 
@@ -605,6 +648,14 @@ function ClueDetails({ clue }: { clue: Clue }) {
 
 function getErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : 'The request failed.'
+}
+
+async function getHighScoresSafely(): Promise<HighScoreEntry[]> {
+  try {
+    return await loadHighScores()
+  } catch {
+    return []
+  }
 }
 
 export default App

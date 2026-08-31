@@ -22,12 +22,9 @@ describe('App', () => {
     const game = createTestGame()
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockResolvedValue(
-        new Response(JSON.stringify(game), {
-          status: 201,
-          headers: { 'Content-Type': 'application/json' },
-        }),
-      ),
+      vi.fn()
+        .mockResolvedValueOnce(jsonResponse(game, { status: 201 }))
+        .mockResolvedValueOnce(jsonResponse([])),
     )
     const user = userEvent.setup()
     render(<App />)
@@ -46,14 +43,21 @@ describe('App', () => {
   it('restores a saved game after a browser refresh', async () => {
     const game = createTestGame({ score: 3 })
     localStorage.setItem('graphrag-movie-quiz.game-id', game.id)
-    const fetchMock = vi.fn().mockResolvedValue(jsonResponse(game))
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse(game))
+      .mockResolvedValueOnce(jsonResponse([
+        { player: 'Jane', score: 6 },
+        { player: 'John', score: 5 },
+      ]))
     vi.stubGlobal('fetch', fetchMock)
 
     render(<App />)
 
     expect(screen.getByRole('status')).toHaveTextContent('Loading game')
     expect(await screen.findByText('Score (completed questions): 3')).toBeInTheDocument()
-    expect(fetchMock).toHaveBeenCalledOnce()
+    expect(screen.getByLabelText('High scores')).toHaveTextContent('1Jane62John5')
+    expect(fetchMock).toHaveBeenCalledTimes(2)
   })
 
   it('clears an expired saved game and allows a new game to start', async () => {
@@ -81,6 +85,7 @@ describe('App', () => {
     const fetchMock = vi
       .fn()
       .mockResolvedValueOnce(jsonResponse(game))
+      .mockResolvedValueOnce(jsonResponse([]))
       .mockResolvedValueOnce(
         jsonResponse({
           correct: false,
@@ -89,6 +94,7 @@ describe('App', () => {
           game: null,
         }),
       )
+      .mockResolvedValueOnce(jsonResponse([{ player: 'Chris', score: 2 }]))
     vi.stubGlobal('fetch', fetchMock)
     const user = userEvent.setup()
     render(<App />)
@@ -99,6 +105,7 @@ describe('App', () => {
     expect(await screen.findByRole('heading', { name: 'Game over' })).toBeInTheDocument()
     expect(screen.getByText('Final score: 2')).toBeInTheDocument()
     expect(screen.getByText('The correct answer was Diego Luna.')).toBeInTheDocument()
+    expect(screen.getByLabelText('High scores')).toHaveTextContent('1Chris2')
     expect(localStorage.getItem('graphrag-movie-quiz.game-id')).toBeNull()
 
     await user.click(screen.getByRole('button', { name: 'Play again' }))
@@ -116,6 +123,7 @@ describe('App', () => {
     const fetchMock = vi
       .fn()
       .mockResolvedValueOnce(jsonResponse(game))
+      .mockResolvedValueOnce(jsonResponse([]))
       .mockResolvedValueOnce(jsonResponse(unlockedGame))
       .mockResolvedValueOnce(
         jsonResponse({
@@ -142,7 +150,7 @@ describe('App', () => {
     )
     fireEvent.contextMenu(clueCard)
     expect(screen.getByRole('dialog', { name: 'Rogue One clue' })).toBeInTheDocument()
-    expect(fetchMock).toHaveBeenCalledTimes(3)
+    expect(fetchMock).toHaveBeenCalledTimes(4)
   })
 
   it('shows the connection movie name immediately after using GraphRAG', async () => {
@@ -160,6 +168,7 @@ describe('App', () => {
     const fetchMock = vi
       .fn()
       .mockResolvedValueOnce(jsonResponse(game))
+      .mockResolvedValueOnce(jsonResponse([]))
       .mockResolvedValueOnce(jsonResponse(unlockedGame))
     vi.stubGlobal('fetch', fetchMock)
     const user = userEvent.setup()
@@ -173,7 +182,7 @@ describe('App', () => {
       await screen.findByRole('button', { name: 'Open Range clue' }),
     ).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'GraphRAG token 1, used' })).toBeDisabled()
-    expect(fetchMock).toHaveBeenCalledTimes(2)
+    expect(fetchMock).toHaveBeenCalledTimes(3)
   })
 
   it('does not reopen suggestions after selecting an autocomplete result', async () => {
@@ -182,6 +191,7 @@ describe('App', () => {
     const fetchMock = vi
       .fn()
       .mockResolvedValueOnce(jsonResponse(game))
+      .mockResolvedValueOnce(jsonResponse([]))
       .mockResolvedValueOnce(jsonResponse([{ name: 'Diego Luna' }]))
     vi.stubGlobal('fetch', fetchMock)
     const user = userEvent.setup()
@@ -194,7 +204,7 @@ describe('App', () => {
     expect(answer).toHaveValue('Diego Luna')
     expect(screen.queryByLabelText('Actor suggestions')).not.toBeInTheDocument()
     await new Promise((resolve) => window.setTimeout(resolve, 250))
-    expect(fetchMock).toHaveBeenCalledTimes(2)
+    expect(fetchMock).toHaveBeenCalledTimes(3)
   })
 })
 
