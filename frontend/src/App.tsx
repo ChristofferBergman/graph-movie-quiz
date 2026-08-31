@@ -1,17 +1,244 @@
-import { Typography } from '@neo4j-ndl/react'
+import { useEffect, useState, type FormEvent } from 'react'
+import {
+  Banner,
+  FilledButton,
+  TextButton,
+  TextInput,
+  Typography,
+} from '@neo4j-ndl/react'
+import {
+  createGame,
+  findActorSuggestions,
+  submitAnswer,
+  type ActorSuggestion,
+  type Game,
+} from './api'
 import './App.css'
 
+const GAME_ID_STORAGE_KEY = 'graphrag-movie-quiz.game-id'
+
 function App() {
+  const [game, setGame] = useState<Game | null>(null)
+  const [finalScore, setFinalScore] = useState<number | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
+
+  async function handleStart(player: string) {
+    setError(null)
+    setIsLoading(true)
+
+    try {
+      const createdGame = await createGame(player)
+      localStorage.setItem(GAME_ID_STORAGE_KEY, createdGame.id)
+      setGame(createdGame)
+      setFinalScore(null)
+    } catch (requestError) {
+      setError(getErrorMessage(requestError))
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  async function handleAnswer(name: string) {
+    if (!game) return
+
+    setError(null)
+    setIsLoading(true)
+
+    try {
+      const result = await submitAnswer(game.id, name)
+      if (result.correct && result.game) {
+        setGame(result.game)
+      } else {
+        localStorage.removeItem(GAME_ID_STORAGE_KEY)
+        setFinalScore(result.score)
+        setGame(null)
+      }
+    } catch (requestError) {
+      setError(getErrorMessage(requestError))
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   return (
     <main className="app-shell">
-      <Typography as="h1" variant="title-1">
-        GraphRAG Online Movie Quiz
-      </Typography>
-      <Typography as="p" variant="body-large">
-        Project foundation ready.
-      </Typography>
+      <section className="game-panel">
+        <Typography as="h1" variant="title-1">
+          GraphRAG Online Movie Quiz
+        </Typography>
+
+        {error && (
+          <Banner variant="danger" hasIcon isAlert>
+            <Banner.Header>Something went wrong</Banner.Header>
+            <Banner.Description>{error}</Banner.Description>
+          </Banner>
+        )}
+
+        {game ? (
+          <GameScreen game={game} isLoading={isLoading} onAnswer={handleAnswer} />
+        ) : (
+          <StartScreen
+            finalScore={finalScore}
+            isLoading={isLoading}
+            onStart={handleStart}
+          />
+        )}
+      </section>
     </main>
   )
+}
+
+interface StartScreenProps {
+  finalScore: number | null
+  isLoading: boolean
+  onStart: (player: string) => Promise<void>
+}
+
+function StartScreen({ finalScore, isLoading, onStart }: StartScreenProps) {
+  const [player, setPlayer] = useState('')
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (player.trim()) void onStart(player)
+  }
+
+  return (
+    <div className="start-screen">
+      {finalScore === null ? (
+        <Typography variant="body-large">
+          Enter your name to start the quiz.
+        </Typography>
+      ) : (
+        <Typography variant="title-3">Final score: {finalScore}</Typography>
+      )}
+
+      <form className="start-form" onSubmit={handleSubmit}>
+        <TextInput
+          label="Player name"
+          value={player}
+          onChange={(event) => setPlayer(event.target.value)}
+          isDisabled={isLoading}
+          isFluid
+          isRequired
+          htmlAttributes={{ autoComplete: 'name', maxLength: 50 }}
+        />
+        <FilledButton
+          type="submit"
+          isDisabled={!player.trim()}
+          isLoading={isLoading}
+          loadingMessage="Starting game"
+        >
+          Start game
+        </FilledButton>
+      </form>
+    </div>
+  )
+}
+
+interface GameScreenProps {
+  game: Game
+  isLoading: boolean
+  onAnswer: (name: string) => Promise<void>
+}
+
+function GameScreen({ game, isLoading, onAnswer }: GameScreenProps) {
+  const [answer, setAnswer] = useState('')
+  const [suggestions, setSuggestions] = useState<ActorSuggestion[]>([])
+  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false)
+
+  useEffect(() => {
+    if (answer.length < 2) return
+
+    const controller = new AbortController()
+    const timer = window.setTimeout(async () => {
+      setIsLoadingSuggestions(true)
+      try {
+        setSuggestions(await findActorSuggestions(answer, controller.signal))
+      } catch (requestError) {
+        if (!(requestError instanceof DOMException && requestError.name === 'AbortError')) {
+          setSuggestions([])
+        }
+      } finally {
+        if (!controller.signal.aborted) setIsLoadingSuggestions(false)
+      }
+    }, 200)
+
+    return () => {
+      window.clearTimeout(timer)
+      controller.abort()
+    }
+  }, [answer])
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!answer.trim()) return
+    await onAnswer(answer)
+    setAnswer('')
+    setSuggestions([])
+  }
+
+  return (
+    <div className="game-screen">
+      <Typography variant="body-large">
+        Score (completed questions): {game.score}
+      </Typography>
+
+      <Typography as="h2" variant="title-3">
+        Who in {game.question.movie} starred in another movie with{' '}
+        {game.question.person}?
+      </Typography>
+
+      <form className="answer-form" onSubmit={handleSubmit}>
+        <TextInput
+          label="Your answer"
+          value={answer}
+          onChange={(event) => {
+            const value = event.target.value
+            setAnswer(value)
+            if (value.length < 2) {
+              setSuggestions([])
+              setIsLoadingSuggestions(false)
+            }
+          }}
+          isDisabled={isLoading}
+          isFluid
+          isLoading={isLoadingSuggestions}
+          htmlAttributes={{ autoComplete: 'off', autoFocus: true }}
+        />
+        <FilledButton
+          type="submit"
+          isDisabled={!answer.trim()}
+          isLoading={isLoading}
+          loadingMessage="Checking answer"
+        >
+          Submit answer
+        </FilledButton>
+      </form>
+
+      {suggestions.length > 0 && (
+        <div className="suggestions" aria-label="Actor suggestions">
+          {suggestions.map((suggestion) => (
+            <TextButton
+              key={suggestion.name}
+              type="button"
+              variant="neutral"
+              onClick={() => {
+                setAnswer(suggestion.name)
+                setSuggestions([])
+              }}
+            >
+              {suggestion.name}
+            </TextButton>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : 'The request failed.'
 }
 
 export default App

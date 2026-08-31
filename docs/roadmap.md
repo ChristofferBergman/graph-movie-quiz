@@ -12,13 +12,13 @@
 [x] Configure validation, error responses and CORS for the frontend
 
 *** Phase 3 - Minimal end-to-end game ***
-[ ] Implement the API endpoint to create a game
-[ ] Implement question generation and persistence
-[ ] Implement actor autocomplete
-[ ] Implement answer submission, validation and score updates
-[ ] Add the start-game screen to the frontend
-[ ] Add a simple playable question-and-answer screen
-[ ] Verify the complete flow from the frontend through the API to Neo4j
+[x] Implement the API endpoint to create a game
+[x] Implement question generation and persistence
+[x] Implement actor autocomplete
+[x] Implement answer submission, validation and score updates
+[x] Add the start-game screen to the frontend
+[x] Add a simple playable question-and-answer screen
+[x] Verify the complete flow from the frontend through the API to Neo4j
 
 *** Phase 4 - Complete the core game lifecycle ***
 [ ] Support multiple questions in the same game

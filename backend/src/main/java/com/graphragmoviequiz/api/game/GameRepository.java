@@ -10,4 +10,6 @@ public interface GameRepository {
     Optional<Game> findById(UUID id);
 
     Optional<Game> update(Game game);
+
+    void deleteById(UUID id);
 }

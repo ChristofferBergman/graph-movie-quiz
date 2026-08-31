@@ -65,6 +65,11 @@ public class Neo4jGameRepository implements GameRepository {
                    g.lastActivity AS lastActivity
             """;
 
+    private static final String DELETE_GAME = """
+            MATCH (g:Game {uuid: $uuid})
+            DETACH DELETE g
+            """;
+
     private final Driver driver;
     private final SessionConfig sessionConfig;
 
@@ -119,6 +124,15 @@ public class Neo4jGameRepository implements GameRepository {
                 ));
                 return result.hasNext() ? Optional.of(mapGame(result.single())) : Optional.empty();
             });
+        }
+    }
+
+    @Override
+    public void deleteById(UUID id) {
+        try (var session = driver.session(sessionConfig)) {
+            session.executeWriteWithoutResult(transaction ->
+                    transaction.run(DELETE_GAME, Map.of("uuid", id.toString())).consume()
+            );
         }
     }
 

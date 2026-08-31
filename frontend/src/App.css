@@ -1,18 +1,66 @@
 .app-shell {
   display: grid;
   min-height: 100vh;
-  place-content: center;
+  place-items: center;
   padding: 2rem;
+}
+
+.game-panel {
+  display: grid;
+  gap: 2rem;
+  justify-items: center;
+  max-width: 48rem;
+  width: 100%;
+}
+
+.game-panel > h1 {
+  color: #014063;
+  font-family: 'Syne Neo', sans-serif;
   text-align: center;
 }
 
-.app-shell h1 {
-  color: #014063;
-  font-size: clamp(2rem, 5vw, 3.5rem);
-  margin: 0;
+.start-screen,
+.game-screen {
+  align-items: center;
+  display: grid;
+  gap: 1.5rem;
+  justify-items: center;
+  width: min(100%, 38rem);
 }
 
-.app-shell p {
-  color: #52616b;
-  margin: 1rem 0 0;
+.game-screen h2 {
+  color: #014063;
+  text-align: center;
+}
+
+.start-form,
+.answer-form {
+  align-items: end;
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: minmax(0, 1fr) auto;
+  width: 100%;
+}
+
+.suggestions {
+  align-items: flex-start;
+  background: white;
+  border: 1px solid #d7dee3;
+  border-radius: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  padding: 0.5rem;
+  width: 100%;
+}
+
+@media (max-width: 36rem) {
+  .app-shell {
+    padding: 1rem;
+  }
+
+  .start-form,
+  .answer-form {
+    align-items: stretch;
+    grid-template-columns: 1fr;
+  }
 }
