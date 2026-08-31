@@ -2,7 +2,18 @@
   display: grid;
   min-height: 100vh;
   place-items: center;
-  padding: 2rem;
+  padding: 2rem 2rem 4.5rem;
+}
+
+.neo4j-footer {
+  bottom: 1.25rem;
+  position: fixed;
+  right: 1.5rem;
+}
+
+.neo4j-footer svg {
+  display: block;
+  width: 6.5rem;
 }
 
 .game-panel {
@@ -414,7 +425,16 @@ button.clue-card {
 
 @media (max-width: 36rem) {
   .app-shell {
-    padding: 1rem;
+    padding: 1rem 1rem 3.75rem;
+  }
+
+  .neo4j-footer {
+    bottom: 0.85rem;
+    right: 1rem;
+  }
+
+  .neo4j-footer svg {
+    width: 5.5rem;
   }
 
   .start-form,

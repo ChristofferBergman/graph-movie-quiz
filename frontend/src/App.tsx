@@ -8,6 +8,7 @@ import {
 import {
   Banner,
   FilledButton,
+  Logo,
   TextButton,
   TextInput,
   Typography,
@@ -201,6 +202,9 @@ function App() {
           />
         )}
       </section>
+      <footer className="neo4j-footer" aria-label="Powered by Neo4j">
+        <Logo type="full" color="color" />
+      </footer>
     </main>
   )
 }

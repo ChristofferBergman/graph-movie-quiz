@@ -16,6 +16,7 @@ describe('App', () => {
     expect(
       screen.getByRole('heading', { name: 'GraphRAG Online Movie Quiz' }),
     ).toBeInTheDocument()
+    expect(screen.getByLabelText('Powered by Neo4j')).toBeInTheDocument()
   })
 
   it('starts a game and shows the first question', async () => {
