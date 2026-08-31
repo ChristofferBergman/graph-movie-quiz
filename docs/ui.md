@@ -29,3 +29,6 @@ game state as it was (if the game still exists).
 Other things to note on the UI:
 * Double-clicking a token still only consumes it once
 * Double-clicking a card just flips it as a regular click
+
+The frontend should make use of the Neo4j Needle framework:
+https://neo4j.design/40a8cff71/p/159f18-needle-design-system
