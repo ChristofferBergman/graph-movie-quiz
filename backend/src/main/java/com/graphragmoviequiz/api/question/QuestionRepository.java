@@ -9,5 +9,5 @@ public interface QuestionRepository {
 
     Optional<CurrentQuestion> findForGame(UUID gameId);
 
-    boolean isCorrectAnswer(UUID gameId, String name);
+    Optional<String> findAnswerForGame(UUID gameId);
 }

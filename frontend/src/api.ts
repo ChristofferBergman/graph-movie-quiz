@@ -21,6 +21,7 @@ export interface ActorSuggestion {
 export interface SubmitAnswerResponse {
   correct: boolean
   score: number
+  correctAnswer: string | null
   game: Game | null
 }
 

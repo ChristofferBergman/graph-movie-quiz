@@ -82,7 +82,12 @@ describe('App', () => {
       .fn()
       .mockResolvedValueOnce(jsonResponse(game))
       .mockResolvedValueOnce(
-        jsonResponse({ correct: false, score: 2, game: null }),
+        jsonResponse({
+          correct: false,
+          score: 2,
+          correctAnswer: 'Diego Luna',
+          game: null,
+        }),
       )
     vi.stubGlobal('fetch', fetchMock)
     const user = userEvent.setup()
@@ -93,6 +98,7 @@ describe('App', () => {
 
     expect(await screen.findByRole('heading', { name: 'Game over' })).toBeInTheDocument()
     expect(screen.getByText('Final score: 2')).toBeInTheDocument()
+    expect(screen.getByText('The correct answer was Diego Luna.')).toBeInTheDocument()
     expect(localStorage.getItem('graphrag-movie-quiz.game-id')).toBeNull()
 
     await user.click(screen.getByRole('button', { name: 'Play again' }))

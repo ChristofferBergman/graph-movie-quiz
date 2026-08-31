@@ -22,6 +22,7 @@ const GAME_ID_STORAGE_KEY = 'graphrag-movie-quiz.game-id'
 function App() {
   const [game, setGame] = useState<Game | null>(null)
   const [finalScore, setFinalScore] = useState<number | null>(null)
+  const [correctAnswer, setCorrectAnswer] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(() =>
     Boolean(localStorage.getItem(GAME_ID_STORAGE_KEY)),
@@ -71,6 +72,7 @@ function App() {
       localStorage.setItem(GAME_ID_STORAGE_KEY, createdGame.id)
       setGame(createdGame)
       setFinalScore(null)
+      setCorrectAnswer(null)
     } catch (requestError) {
       setError(getErrorMessage(requestError))
     } finally {
@@ -93,6 +95,7 @@ function App() {
       } else {
         localStorage.removeItem(GAME_ID_STORAGE_KEY)
         setFinalScore(result.score)
+        setCorrectAnswer(result.correctAnswer)
         setGame(null)
       }
     } catch (requestError) {
@@ -111,6 +114,7 @@ function App() {
 
   function handleRestart() {
     setFinalScore(null)
+    setCorrectAnswer(null)
     setError(null)
   }
 
@@ -135,7 +139,11 @@ function App() {
         ) : game ? (
           <GameScreen game={game} isLoading={isLoading} onAnswer={handleAnswer} />
         ) : finalScore !== null ? (
-          <GameOverScreen score={finalScore} onRestart={handleRestart} />
+          <GameOverScreen
+            score={finalScore}
+            correctAnswer={correctAnswer}
+            onRestart={handleRestart}
+          />
         ) : (
           <StartScreen
             isLoading={isLoading}
@@ -191,9 +199,11 @@ function StartScreen({ isLoading, onStart }: StartScreenProps) {
 
 function GameOverScreen({
   score,
+  correctAnswer,
   onRestart,
 }: {
   score: number
+  correctAnswer: string | null
   onRestart: () => void
 }) {
   return (
@@ -202,6 +212,11 @@ function GameOverScreen({
         Game over
       </Typography>
       <Typography variant="title-3">Final score: {score}</Typography>
+      {correctAnswer && (
+        <Typography variant="body-large">
+          The correct answer was {correctAnswer}.
+        </Typography>
+      )}
       <FilledButton type="button" onClick={onRestart}>
         Play again
       </FilledButton>

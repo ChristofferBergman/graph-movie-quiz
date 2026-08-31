@@ -66,9 +66,9 @@ public class Neo4jQuestionRepository implements QuestionRepository {
             RETURN movie.title AS movie, person.name AS person
             """;
 
-    private static final String CHECK_ANSWER = """
+    private static final String FIND_ANSWER = """
             MATCH (g:Game {uuid: $uuid})-[:ANSWER_PERSON]->(answer:Person)
-            RETURN toLower(answer.name) = toLower($name) AS correct
+            RETURN answer.name AS name
             """;
 
     private final Driver driver;
@@ -119,14 +119,13 @@ public class Neo4jQuestionRepository implements QuestionRepository {
     }
 
     @Override
-    public boolean isCorrectAnswer(UUID gameId, String name) {
+    public Optional<String> findAnswerForGame(UUID gameId) {
         try (var session = driver.session(sessionConfig)) {
             return session.executeRead(transaction -> {
-                var result = transaction.run(CHECK_ANSWER, Map.of(
-                        "uuid", gameId.toString(),
-                        "name", name
-                ));
-                return result.hasNext() && result.single().get("correct").asBoolean();
+                var result = transaction.run(FIND_ANSWER, Map.of("uuid", gameId.toString()));
+                return result.hasNext()
+                        ? Optional.of(result.single().get("name").asString())
+                        : Optional.empty();
             });
         }
     }

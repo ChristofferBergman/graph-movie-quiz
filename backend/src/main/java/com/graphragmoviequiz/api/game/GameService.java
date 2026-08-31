@@ -38,10 +38,12 @@ public class GameService {
 
     public SubmitAnswerResponse submitAnswer(UUID gameId, String name) {
         var game = getExistingGame(gameId);
+        var correctAnswer = questions.findAnswerForGame(gameId)
+                .orElseThrow(() -> new IllegalStateException("Game has no current answer."));
 
-        if (!questions.isCorrectAnswer(gameId, name)) {
+        if (!correctAnswer.equalsIgnoreCase(name)) {
             games.deleteById(gameId);
-            return new SubmitAnswerResponse(false, game.score(), null);
+            return new SubmitAnswerResponse(false, game.score(), correctAnswer, null);
         }
 
         var updatedGame = new Game(
@@ -59,6 +61,7 @@ public class GameService {
         return new SubmitAnswerResponse(
                 true,
                 updatedGame.score(),
+                null,
                 toResponse(updatedGame, nextQuestion)
         );
     }

@@ -68,6 +68,7 @@ question:
 {
   "correct": true,
   "score": 4,
+  "correctAnswer": null,
   "game": {
     "id": "b9454d2d-23cc-43ea-a043-dfa05cba079a",
     "player": "Chris",
@@ -84,8 +85,18 @@ question:
 }
 ```
 
-For an incorrect answer, `correct` is `false`, `score` is the final score, and
-`game` is `null` because the game is over.
+For an incorrect answer, `correct` is `false`, `score` is the final score,
+`correctAnswer` contains the actor's name, and `game` is `null` because the
+game is over:
+
+```json
+{
+  "correct": false,
+  "score": 3,
+  "correctAnswer": "Diego Luna",
+  "game": null
+}
+```
 
 ## Actor suggestions
 

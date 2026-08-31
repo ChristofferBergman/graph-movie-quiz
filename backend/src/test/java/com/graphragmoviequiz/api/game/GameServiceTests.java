@@ -49,7 +49,7 @@ class GameServiceTests {
         var game = gameWithScore(2);
         var nextQuestion = new CurrentQuestion("Arrival", "Jeremy Renner");
         when(games.findById(game.id())).thenReturn(Optional.of(game));
-        when(questions.isCorrectAnswer(game.id(), "Diego Luna")).thenReturn(true);
+        when(questions.findAnswerForGame(game.id())).thenReturn(Optional.of("Diego Luna"));
         when(games.update(any(Game.class))).thenAnswer(invocation ->
                 Optional.of(invocation.getArgument(0, Game.class))
         );
@@ -60,6 +60,7 @@ class GameServiceTests {
 
         assertThat(response.correct()).isTrue();
         assertThat(response.score()).isEqualTo(3);
+        assertThat(response.correctAnswer()).isNull();
         assertThat(response.game().question().movie()).isEqualTo("Arrival");
         var updatedGame = ArgumentCaptor.forClass(Game.class);
         verify(games).update(updatedGame.capture());
@@ -71,13 +72,14 @@ class GameServiceTests {
     void incorrectAnswerEndsAndDeletesGame() {
         var game = gameWithScore(2);
         when(games.findById(game.id())).thenReturn(Optional.of(game));
-        when(questions.isCorrectAnswer(game.id(), "Someone Else")).thenReturn(false);
+        when(questions.findAnswerForGame(game.id())).thenReturn(Optional.of("Diego Luna"));
         var service = new GameService(games, questions);
 
         var response = service.submitAnswer(game.id(), "Someone Else");
 
         assertThat(response.correct()).isFalse();
         assertThat(response.score()).isEqualTo(2);
+        assertThat(response.correctAnswer()).isEqualTo("Diego Luna");
         assertThat(response.game()).isNull();
         verify(games).deleteById(game.id());
         verify(questions, never()).replaceForGame(game.id());
