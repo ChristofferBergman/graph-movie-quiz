@@ -6,10 +6,10 @@
 [x] Inform me where to place resources (e.g. PNG images and font files) used by the frontend
 
 *** Phase 2 - Database connection and API design ***
-[ ] Connect the backend to Neo4j Aura using environment-based configuration
-[ ] Implement the database access needed to create, load and update a game
-[ ] Define the REST API endpoints and their request and response payloads
-[ ] Configure validation, error responses and CORS for the frontend
+[x] Connect the backend to Neo4j Aura using environment-based configuration
+[x] Implement the database access needed to create, load and update a game
+[x] Define the REST API endpoints and their request and response payloads
+[x] Configure validation, error responses and CORS for the frontend
 
 *** Phase 3 - Minimal end-to-end game ***
 [ ] Implement the API endpoint to create a game

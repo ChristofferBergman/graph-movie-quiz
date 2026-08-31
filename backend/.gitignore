@@ -4,3 +4,6 @@ target/
 .settings/
 .idea/
 *.iml
+.env
+.env.*
+!.env.example

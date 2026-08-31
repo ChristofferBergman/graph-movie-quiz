@@ -71,7 +71,7 @@ Whenever creating a new game, also cleanup old games that never finished. Use th
 query for that:
 
 ```cypher
-MATCH (g:Game) WHERE duration.inDays(g.lastActivity, datetime())).days > 3
+MATCH (g:Game) WHERE duration.inDays(g.lastActivity, datetime()).days > 3
 DETACH DELETE g
 ```
 

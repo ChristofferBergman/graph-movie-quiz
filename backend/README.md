@@ -4,7 +4,8 @@ Java 21 and Spring Boot backend for the GraphRAG Online Movie Quiz.
 
 ## Local development
 
-Run the application with the local profile:
+Copy `.env.example` to a suitable local secrets file or export the variables
+in your shell. Run the application with the local profile:
 
 ```sh
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=local
@@ -16,5 +17,12 @@ Run the tests:
 ./mvnw test
 ```
 
-Neo4j configuration will be added in Phase 2. Secrets must be supplied through
-environment variables and must not be committed to the repository.
+The local profile defaults to `bolt://localhost:7687`, username `neo4j`,
+password `password`, and database `neo4j`. Override these with `NEO4J_URI`,
+`NEO4J_USERNAME`, `NEO4J_PASSWORD`, and `NEO4J_DATABASE`.
+
+Production Neo4j credentials are required environment variables. The allowed
+frontend origins can be supplied as a comma-separated `CORS_ALLOWED_ORIGINS`
+value. Secrets must not be committed to the repository.
+
+The planned REST contract is documented in [`../docs/api.md`](../docs/api.md).

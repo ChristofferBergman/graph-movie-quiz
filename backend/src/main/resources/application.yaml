@@ -1,6 +1,21 @@
 spring:
   application:
     name: graphrag-movie-quiz-api
+  neo4j:
+    uri: ${NEO4J_URI}
+    authentication:
+      username: ${NEO4J_USERNAME}
+      password: ${NEO4J_PASSWORD}
+  data:
+    neo4j:
+      database: ${NEO4J_DATABASE:neo4j}
+  mvc:
+    problemdetails:
+      enabled: true
+
+app:
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
 
 server:
   shutdown: graceful

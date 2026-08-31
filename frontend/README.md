@@ -2,6 +2,10 @@
 
 React and TypeScript frontend built with Vite.
 
+The application uses Neo4j Needle (`@neo4j-ndl/react`) for standard UI
+components, design tokens, themes, and accessibility behavior. Game-specific
+visuals such as clue cards and token animations remain custom components.
+
 ## Local development
 
 Install dependencies and start the development server:
