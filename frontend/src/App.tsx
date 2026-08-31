@@ -15,6 +15,7 @@ import {
 } from '@neo4j-ndl/react'
 import {
   createGame,
+  closeGame,
   findActorSuggestions,
   loadGame,
   loadHighScores,
@@ -152,6 +153,29 @@ function App() {
     }
   }
 
+  async function handleCloseGame() {
+    if (!game || requestInFlight.current) return
+    requestInFlight.current = true
+    setError(null)
+    setIsLoading(true)
+
+    try {
+      await closeGame(game.id)
+      localStorage.removeItem(GAME_ID_STORAGE_KEY)
+      setGame(null)
+    } catch (requestError) {
+      if (requestError instanceof ApiError && requestError.status === 404) {
+        localStorage.removeItem(GAME_ID_STORAGE_KEY)
+        setGame(null)
+      } else {
+        setError(getErrorMessage(requestError))
+      }
+    } finally {
+      requestInFlight.current = false
+      setIsLoading(false)
+    }
+  }
+
   function handleRestart() {
     setFinalScore(null)
     setCorrectAnswer(null)
@@ -183,6 +207,7 @@ function App() {
             isLoading={isLoading}
             onAnswer={handleAnswer}
             onUseToken={handleToken}
+            onClose={handleCloseGame}
             highScores={highScores}
           />
         ) : finalScore !== null ? (
@@ -283,6 +308,7 @@ interface GameScreenProps {
   isLoading: boolean
   onAnswer: (name: string) => Promise<void>
   onUseToken: (type: TokenType) => Promise<void>
+  onClose: () => Promise<void>
   highScores: HighScoreEntry[]
 }
 
@@ -291,6 +317,7 @@ function GameScreen({
   isLoading,
   onAnswer,
   onUseToken,
+  onClose,
   highScores,
 }: GameScreenProps) {
   const [answer, setAnswer] = useState('')
@@ -399,6 +426,14 @@ function GameScreen({
         <Typography variant="body-small" className="zoom-hint">
           Right-click card to zoom
         </Typography>
+        <TextButton
+          type="button"
+          variant="neutral"
+          isDisabled={isLoading}
+          onClick={() => void onClose()}
+        >
+          Close game
+        </TextButton>
       </div>
       <TokenPanel game={game} isLoading={isLoading} onUseToken={onUseToken} />
     </div>

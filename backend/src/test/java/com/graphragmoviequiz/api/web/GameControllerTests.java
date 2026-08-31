@@ -16,6 +16,8 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import java.util.UUID;
 
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -67,6 +69,16 @@ class GameControllerTests {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.title").value("Invalid request"))
                 .andExpect(jsonPath("$.errors.player").value("Player name is required."));
+    }
+
+    @Test
+    void closesGame() throws Exception {
+        var id = UUID.randomUUID();
+
+        mockMvc.perform(delete("/api/v1/games/{gameId}", id))
+                .andExpect(status().isNoContent());
+
+        verify(gameService).closeGame(id);
     }
 
     @Test

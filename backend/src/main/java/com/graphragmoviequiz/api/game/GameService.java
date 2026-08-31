@@ -51,6 +51,11 @@ public class GameService {
         return toResponse(game, question);
     }
 
+    public void closeGame(UUID gameId) {
+        getExistingGame(gameId);
+        games.deleteById(gameId);
+    }
+
     public SubmitAnswerResponse submitAnswer(UUID gameId, String name) {
         var game = getExistingGame(gameId);
         var correctAnswer = questions.findAnswerForGame(gameId)

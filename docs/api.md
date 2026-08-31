@@ -47,6 +47,12 @@ created. This is used to restore a game after a browser refresh.
 
 Response: `404 Not Found` when the game does not exist or has expired.
 
+### Close a game
+
+`DELETE /api/v1/games/{gameId}`
+
+Deletes the active game and its relationships. Returns `204 No Content`.
+
 ### Submit an answer
 
 `POST /api/v1/games/{gameId}/answers`

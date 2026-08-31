@@ -61,6 +61,28 @@ describe('App', () => {
     expect(fetchMock).toHaveBeenCalledTimes(2)
   })
 
+  it('closes the active game and clears it from the browser', async () => {
+    const game = createTestGame()
+    localStorage.setItem('graphrag-movie-quiz.game-id', game.id)
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse(game))
+      .mockResolvedValueOnce(jsonResponse([]))
+      .mockResolvedValueOnce(new Response(null, { status: 204 }))
+    vi.stubGlobal('fetch', fetchMock)
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(await screen.findByRole('button', { name: 'Close game' }))
+
+    expect(await screen.findByLabelText('Player name')).toBeInTheDocument()
+    expect(localStorage.getItem('graphrag-movie-quiz.game-id')).toBeNull()
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      `http://localhost:8080/api/v1/games/${game.id}`,
+      expect.objectContaining({ method: 'DELETE' }),
+    )
+  })
+
   it('clears an expired saved game and allows a new game to start', async () => {
     localStorage.setItem('graphrag-movie-quiz.game-id', 'expired-id')
     vi.stubGlobal(

@@ -56,6 +56,16 @@ class GameServiceTests {
     }
 
     @Test
+    void closesExistingGame() {
+        var game = gameWithScore(2);
+        when(games.findById(game.id())).thenReturn(Optional.of(game));
+
+        service().closeGame(game.id());
+
+        verify(games).deleteById(game.id());
+    }
+
+    @Test
     void correctAnswerIncrementsScoreAndReturnsNextQuestion() {
         var game = gameWithScore(2);
         var nextQuestion = new CurrentQuestion("Arrival", "Jeremy Renner", "The Hurt Locker");

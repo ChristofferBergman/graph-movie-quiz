@@ -10,6 +10,7 @@ import com.graphragmoviequiz.api.web.model.UseTokenRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -40,6 +41,12 @@ public class GameController {
     @GetMapping("/{gameId}")
     GameResponse getGame(@PathVariable UUID gameId) {
         return gameService.getGame(gameId);
+    }
+
+    @DeleteMapping("/{gameId}")
+    ResponseEntity<Void> closeGame(@PathVariable UUID gameId) {
+        gameService.closeGame(gameId);
+        return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/{gameId}/answers")

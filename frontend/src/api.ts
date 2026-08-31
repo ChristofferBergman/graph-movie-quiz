@@ -74,6 +74,8 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     )
   }
 
+  if (response.status === 204) return undefined as T
+
   return response.json() as Promise<T>
 }
 
@@ -86,6 +88,10 @@ export function createGame(player: string): Promise<Game> {
 
 export function loadGame(gameId: string): Promise<Game> {
   return request<Game>(`/api/v1/games/${gameId}`)
+}
+
+export function closeGame(gameId: string): Promise<void> {
+  return request<void>(`/api/v1/games/${gameId}`, { method: 'DELETE' })
 }
 
 export function findActorSuggestions(
