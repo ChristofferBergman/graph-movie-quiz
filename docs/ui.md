@@ -2,7 +2,7 @@ See GraphRAG Movie Quiz mockups.pdf for mockups of the screens.
 
 The backside and frontside of the cards will be provided as PNG images.
 The text on the cards should be rendered with this font:
-"Syne Neo", PLAIN, 42
+"Syne Neo", MEDIUM, 42
 Though it should be truncated if it doesn't fit
 The color of the text should be RGB 1, 64, 99
 
