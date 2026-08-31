@@ -5,6 +5,7 @@ Before making architectural or implementation changes, read:
 - `docs/product_vision.md`
 - `docs/architecture.md`
 - `docs/database.md`
+- `docs/ui.md`
 - `docs/roadmap.md`
 - `docs/GraphRAG Movie Quiz mockups.pdf`
 
