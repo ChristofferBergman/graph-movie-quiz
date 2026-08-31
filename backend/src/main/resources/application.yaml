@@ -1,0 +1,6 @@
+spring:
+  application:
+    name: graphrag-movie-quiz-api
+
+server:
+  shutdown: graceful

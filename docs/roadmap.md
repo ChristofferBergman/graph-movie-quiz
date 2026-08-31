@@ -1,9 +1,9 @@
 *** Phase 1 - Project foundations ***
-[ ] Create backend structure with Java 21, Maven and Spring Boot
-[ ] Create frontend structure with React, TypeScript and Vite
-[ ] Install the initial frontend dependencies and React components
-[ ] Establish the local development configuration and test setup
-[ ] Inform me where to place resources (e.g. PNG images and font files) used by the frontend
+[x] Create backend structure with Java 21, Maven and Spring Boot
+[x] Create frontend structure with React, TypeScript and Vite
+[x] Install the initial frontend dependencies and React components
+[x] Establish the local development configuration and test setup
+[x] Inform me where to place resources (e.g. PNG images and font files) used by the frontend
 
 *** Phase 2 - Database connection and API design ***
 [ ] Connect the backend to Neo4j Aura using environment-based configuration
