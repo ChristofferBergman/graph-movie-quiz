@@ -21,11 +21,11 @@
 [x] Verify the complete flow from the frontend through the API to Neo4j
 
 *** Phase 4 - Complete the core game lifecycle ***
-[ ] Support multiple questions in the same game
-[ ] Implement game-over and restart behavior
-[ ] Restore the current game and UI state after a browser refresh
-[ ] Handle expired or invalid games and relevant loading and error states
-[ ] Make repeated requests and double-clicks safe where needed
+[x] Support multiple questions in the same game
+[x] Implement game-over and restart behavior
+[x] Restore the current game and UI state after a browser refresh
+[x] Handle expired or invalid games and relevant loading and error states
+[x] Make repeated requests and double-clicks safe where needed
 
 *** Phase 5 - RAG and GraphRAG game mechanics ***
 [ ] Implement persistent RAG and GraphRAG token counts and usage rules

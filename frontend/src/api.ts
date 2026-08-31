@@ -29,6 +29,16 @@ interface ProblemDetails {
   title?: string
 }
 
+export class ApiError extends Error {
+  readonly status: number
+
+  constructor(message: string, status: number) {
+    super(message)
+    this.name = 'ApiError'
+    this.status = status
+  }
+}
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080'
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
@@ -42,7 +52,10 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
   if (!response.ok) {
     const problem = (await response.json().catch(() => ({}))) as ProblemDetails
-    throw new Error(problem.detail ?? problem.title ?? 'The request failed.')
+    throw new ApiError(
+      problem.detail ?? problem.title ?? 'The request failed.',
+      response.status,
+    )
   }
 
   return response.json() as Promise<T>
@@ -53,6 +66,10 @@ export function createGame(player: string): Promise<Game> {
     method: 'POST',
     body: JSON.stringify({ player }),
   })
+}
+
+export function loadGame(gameId: string): Promise<Game> {
+  return request<Game>(`/api/v1/games/${gameId}`)
 }
 
 export function findActorSuggestions(

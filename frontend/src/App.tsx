@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import {
   Banner,
   FilledButton,
@@ -9,7 +9,9 @@ import {
 import {
   createGame,
   findActorSuggestions,
+  loadGame,
   submitAnswer,
+  ApiError,
   type ActorSuggestion,
   type Game,
 } from './api'
@@ -21,9 +23,46 @@ function App() {
   const [game, setGame] = useState<Game | null>(null)
   const [finalScore, setFinalScore] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(() =>
+    Boolean(localStorage.getItem(GAME_ID_STORAGE_KEY)),
+  )
+  const requestInFlight = useRef(false)
+
+  useEffect(() => {
+    const storedGameId = localStorage.getItem(GAME_ID_STORAGE_KEY)
+    if (!storedGameId) return
+
+    let isActive = true
+    void loadGame(storedGameId)
+      .then((loadedGame) => {
+        if (isActive) setGame(loadedGame)
+      })
+      .catch((requestError: unknown) => {
+        if (!isActive) return
+        if (
+          requestError instanceof ApiError &&
+          (requestError.status === 400 || requestError.status === 404)
+        ) {
+          localStorage.removeItem(GAME_ID_STORAGE_KEY)
+          setError(
+            'Your previous game is invalid or has expired. Start a new game to continue.',
+          )
+        } else {
+          setError(getErrorMessage(requestError))
+        }
+      })
+      .finally(() => {
+        if (isActive) setIsLoading(false)
+      })
+
+    return () => {
+      isActive = false
+    }
+  }, [])
 
   async function handleStart(player: string) {
+    if (requestInFlight.current) return
+    requestInFlight.current = true
     setError(null)
     setIsLoading(true)
 
@@ -35,12 +74,14 @@ function App() {
     } catch (requestError) {
       setError(getErrorMessage(requestError))
     } finally {
+      requestInFlight.current = false
       setIsLoading(false)
     }
   }
 
   async function handleAnswer(name: string) {
-    if (!game) return
+    if (!game || requestInFlight.current) return
+    requestInFlight.current = true
 
     setError(null)
     setIsLoading(true)
@@ -55,10 +96,22 @@ function App() {
         setGame(null)
       }
     } catch (requestError) {
-      setError(getErrorMessage(requestError))
+      if (requestError instanceof ApiError && requestError.status === 404) {
+        localStorage.removeItem(GAME_ID_STORAGE_KEY)
+        setGame(null)
+        setError('This game has expired. Start a new game to continue.')
+      } else {
+        setError(getErrorMessage(requestError))
+      }
     } finally {
+      requestInFlight.current = false
       setIsLoading(false)
     }
+  }
+
+  function handleRestart() {
+    setFinalScore(null)
+    setError(null)
   }
 
   return (
@@ -75,11 +128,16 @@ function App() {
           </Banner>
         )}
 
-        {game ? (
+        {isLoading && !game && finalScore === null ? (
+          <div role="status">
+            <Typography variant="body-large">Loading game…</Typography>
+          </div>
+        ) : game ? (
           <GameScreen game={game} isLoading={isLoading} onAnswer={handleAnswer} />
+        ) : finalScore !== null ? (
+          <GameOverScreen score={finalScore} onRestart={handleRestart} />
         ) : (
           <StartScreen
-            finalScore={finalScore}
             isLoading={isLoading}
             onStart={handleStart}
           />
@@ -90,12 +148,11 @@ function App() {
 }
 
 interface StartScreenProps {
-  finalScore: number | null
   isLoading: boolean
   onStart: (player: string) => Promise<void>
 }
 
-function StartScreen({ finalScore, isLoading, onStart }: StartScreenProps) {
+function StartScreen({ isLoading, onStart }: StartScreenProps) {
   const [player, setPlayer] = useState('')
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -105,13 +162,9 @@ function StartScreen({ finalScore, isLoading, onStart }: StartScreenProps) {
 
   return (
     <div className="start-screen">
-      {finalScore === null ? (
-        <Typography variant="body-large">
-          Enter your name to start the quiz.
-        </Typography>
-      ) : (
-        <Typography variant="title-3">Final score: {finalScore}</Typography>
-      )}
+      <Typography variant="body-large">
+        Enter your name to start the quiz.
+      </Typography>
 
       <form className="start-form" onSubmit={handleSubmit}>
         <TextInput
@@ -132,6 +185,26 @@ function StartScreen({ finalScore, isLoading, onStart }: StartScreenProps) {
           Start game
         </FilledButton>
       </form>
+    </div>
+  )
+}
+
+function GameOverScreen({
+  score,
+  onRestart,
+}: {
+  score: number
+  onRestart: () => void
+}) {
+  return (
+    <div className="game-over-screen">
+      <Typography as="h2" variant="title-2">
+        Game over
+      </Typography>
+      <Typography variant="title-3">Final score: {score}</Typography>
+      <FilledButton type="button" onClick={onRestart}>
+        Play again
+      </FilledButton>
     </div>
   )
 }

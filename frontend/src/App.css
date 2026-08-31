@@ -20,7 +20,8 @@
 }
 
 .start-screen,
-.game-screen {
+.game-screen,
+.game-over-screen {
   align-items: center;
   display: grid;
   gap: 1.5rem;

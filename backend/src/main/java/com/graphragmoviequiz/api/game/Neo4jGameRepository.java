@@ -43,6 +43,7 @@ public class Neo4jGameRepository implements GameRepository {
 
     private static final String FIND_GAME = """
             MATCH (g:Game {uuid: $uuid})
+            WHERE duration.inDays(g.lastActivity, datetime()).days <= 3
             RETURN g.uuid AS uuid,
                    g.player AS player,
                    g.score AS score,
