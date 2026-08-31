@@ -129,7 +129,7 @@ describe('App', () => {
 
     await user.click(
       await screen.findByRole('button', {
-        name: 'Use RAG token, 2 remaining',
+        name: 'Use RAG token 1',
       }),
     )
     const clueCard = await screen.findByRole('button', {
@@ -144,6 +144,58 @@ describe('App', () => {
     expect(screen.getByRole('dialog', { name: 'Rogue One clue' })).toBeInTheDocument()
     expect(fetchMock).toHaveBeenCalledTimes(3)
   })
+
+  it('shows the connection movie name immediately after using GraphRAG', async () => {
+    const game = createTestGame()
+    const unlockedGame = {
+      ...game,
+      remainingGraphRag: 1,
+      question: {
+        ...game.question,
+        connectionMovie: 'Open Range',
+        graphRagUsed: true,
+      },
+    }
+    localStorage.setItem('graphrag-movie-quiz.game-id', game.id)
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse(game))
+      .mockResolvedValueOnce(jsonResponse(unlockedGame))
+    vi.stubGlobal('fetch', fetchMock)
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(
+      await screen.findByRole('button', { name: 'Use GraphRAG token 1' }),
+    )
+
+    expect(
+      await screen.findByRole('button', { name: 'Open Range clue' }),
+    ).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'GraphRAG token 1, used' })).toBeDisabled()
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
+
+  it('does not reopen suggestions after selecting an autocomplete result', async () => {
+    const game = createTestGame()
+    localStorage.setItem('graphrag-movie-quiz.game-id', game.id)
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse(game))
+      .mockResolvedValueOnce(jsonResponse([{ name: 'Diego Luna' }]))
+    vi.stubGlobal('fetch', fetchMock)
+    const user = userEvent.setup()
+    render(<App />)
+
+    const answer = await screen.findByLabelText('Your answer')
+    await user.type(answer, 'Di')
+    await user.click(await screen.findByRole('button', { name: 'Diego Luna' }))
+
+    expect(answer).toHaveValue('Diego Luna')
+    expect(screen.queryByLabelText('Actor suggestions')).not.toBeInTheDocument()
+    await new Promise((resolve) => window.setTimeout(resolve, 250))
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
 })
 
 function createTestGame(overrides: { score?: number } = {}) {
@@ -156,6 +208,7 @@ function createTestGame(overrides: { score?: number } = {}) {
     question: {
       movie: 'Rogue One',
       person: 'Robert Duvall',
+      connectionMovie: null,
       ragUsed: false,
       graphRagUsed: false,
     },

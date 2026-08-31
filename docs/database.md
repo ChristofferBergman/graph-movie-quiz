@@ -36,7 +36,8 @@ When showing clues for either *m1* or *m2* use this query:
 ```cypher
 MATCH (m:Movie) WHERE m.id = $clueMovieId
 MATCH (p:Person)-[a:ACTED_IN]->(m) WHERE a.order < 6
-RETURN p.name
+WITH p ORDER BY a.order
+RETURN DISTINCT p.name LIMIT 5
 ```
 
 The query used to populate possible answers when the user has types at least

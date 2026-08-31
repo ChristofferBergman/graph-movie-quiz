@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
 
 import java.util.Map;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -18,8 +19,9 @@ public class Neo4jClueRepository implements ClueRepository {
             WHERE coalesce(g.ragUsed, false) OR coalesce(g.graphRagUsed, false)
             MATCH (actor:Person)-[credit:ACTED_IN]->(movie)
             WHERE credit.order < 6
-            WITH movie, actor, credit ORDER BY credit.order
-            RETURN movie.title AS movie, collect(actor.name)[..5] AS actors
+            WITH movie, actor ORDER BY credit.order
+            RETURN DISTINCT movie.title AS movie, actor.name AS actor
+            LIMIT 5
             """;
 
     private static final String FIND_CONNECTION_MOVIE_CLUE = """
@@ -27,8 +29,9 @@ public class Neo4jClueRepository implements ClueRepository {
             WHERE coalesce(g.graphRagUsed, false)
             MATCH (actor:Person)-[credit:ACTED_IN]->(movie)
             WHERE credit.order < 6
-            WITH movie, actor, credit ORDER BY credit.order
-            RETURN movie.title AS movie, collect(actor.name)[..5] AS actors
+            WITH movie, actor ORDER BY credit.order
+            RETURN DISTINCT movie.title AS movie, actor.name AS actor
+            LIMIT 5
             """;
 
     private final Driver driver;
@@ -56,15 +59,20 @@ public class Neo4jClueRepository implements ClueRepository {
         try (var session = driver.session(sessionConfig)) {
             return session.executeRead(transaction -> {
                 var result = transaction.run(query, Map.of("uuid", gameId.toString()));
-                return result.hasNext() ? Optional.of(mapClue(result.single())) : Optional.empty();
+                var records = result.list();
+                return records.isEmpty() ? Optional.empty() : Optional.of(mapClue(records));
             });
         }
     }
 
-    private Clue mapClue(Record record) {
+    private Clue mapClue(List<Record> records) {
         return new Clue(
-                record.get("movie").asString(),
-                record.get("actors").asList(value -> value.asString())
+                records.getFirst().get("movie").asString(),
+                records.stream()
+                        .map(record -> record.get("actor").asString())
+                        .distinct()
+                        .limit(5)
+                        .toList()
         );
     }
 }

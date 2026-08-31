@@ -38,7 +38,8 @@ public class Neo4jQuestionRepository implements QuestionRepository {
                    elementId(m1) AS m1ElementId,
                    elementId(m2) AS m2ElementId,
                    p1.name AS person,
-                   m2.title AS movie
+                   m2.title AS movie,
+                   m1.title AS connectionMovie
             LIMIT 1
             """;
 
@@ -64,7 +65,10 @@ public class Neo4jQuestionRepository implements QuestionRepository {
     private static final String FIND_CURRENT_QUESTION = """
             MATCH (g:Game {uuid: $uuid})-[:QUESTION_MOVIE]->(movie:Movie)
             MATCH (g)-[:QUESTION_PERSON]->(person:Person)
-            RETURN movie.title AS movie, person.name AS person
+            MATCH (g)-[:CLUE_MOVIE]->(connectionMovie:Movie)
+            RETURN movie.title AS movie,
+                   person.name AS person,
+                   connectionMovie.title AS connectionMovie
             """;
 
     private static final String FIND_ANSWER = """
@@ -134,7 +138,8 @@ public class Neo4jQuestionRepository implements QuestionRepository {
     private CurrentQuestion mapQuestion(Record record) {
         return new CurrentQuestion(
                 record.get("movie").asString(),
-                record.get("person").asString()
+                record.get("person").asString(),
+                record.get("connectionMovie").asString()
         );
     }
 }

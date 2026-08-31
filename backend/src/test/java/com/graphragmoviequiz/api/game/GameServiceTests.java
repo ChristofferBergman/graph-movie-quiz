@@ -38,7 +38,7 @@ class GameServiceTests {
     @Test
     void createsGameAndFirstQuestion() {
         var game = gameWithScore(0);
-        var question = new CurrentQuestion("Rogue One", "Robert Duvall");
+        var question = new CurrentQuestion("Rogue One", "Robert Duvall", "Open Range");
         when(games.create("Chris")).thenReturn(game);
         when(questions.replaceForGame(game.id())).thenReturn(question);
         var service = service();
@@ -54,7 +54,7 @@ class GameServiceTests {
     @Test
     void correctAnswerIncrementsScoreAndReturnsNextQuestion() {
         var game = gameWithScore(2);
-        var nextQuestion = new CurrentQuestion("Arrival", "Jeremy Renner");
+        var nextQuestion = new CurrentQuestion("Arrival", "Jeremy Renner", "The Hurt Locker");
         when(games.findById(game.id())).thenReturn(Optional.of(game));
         when(questions.findAnswerForGame(game.id())).thenReturn(Optional.of("Diego Luna"));
         when(games.update(any(Game.class))).thenAnswer(invocation ->
@@ -102,13 +102,14 @@ class GameServiceTests {
                 new TokenUseResult(TokenUseResult.Status.APPLIED, updated)
         ));
         when(questions.findForGame(game.id())).thenReturn(Optional.of(
-                new CurrentQuestion("Rogue One", "Robert Duvall")
+                new CurrentQuestion("Rogue One", "Robert Duvall", "Open Range")
         ));
 
         var response = service().useToken(game.id(), TokenType.GRAPH_RAG);
 
         assertThat(response.remainingGraphRag()).isEqualTo(1);
         assertThat(response.question().graphRagUsed()).isTrue();
+        assertThat(response.question().connectionMovie()).isEqualTo("Open Range");
     }
 
     @Test
@@ -132,7 +133,7 @@ class GameServiceTests {
                 new TokenUseResult(TokenUseResult.Status.ALREADY_USED, game)
         ));
         when(questions.findForGame(game.id())).thenReturn(Optional.of(
-                new CurrentQuestion("Rogue One", "Robert Duvall")
+                new CurrentQuestion("Rogue One", "Robert Duvall", "Open Range")
         ));
 
         var response = service().useToken(game.id(), TokenType.RAG);

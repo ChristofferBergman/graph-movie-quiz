@@ -2,6 +2,7 @@ package com.graphragmoviequiz.api.question;
 
 public record CurrentQuestion(
         String movie,
-        String person
+        String person,
+        String connectionMovie
 ) {
 }

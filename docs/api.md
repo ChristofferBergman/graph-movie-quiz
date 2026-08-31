@@ -29,6 +29,7 @@ Response: `201 Created` with a `Location` header pointing to the new game.
   "question": {
     "movie": "Rogue One",
     "person": "Robert Duvall",
+    "connectionMovie": null,
     "ragUsed": false,
     "graphRagUsed": false
   }
@@ -78,6 +79,7 @@ question:
     "question": {
       "movie": "Arrival",
       "person": "Jeremy Renner",
+      "connectionMovie": null,
       "ragUsed": false,
       "graphRagUsed": false
     }
@@ -129,6 +131,8 @@ Request:
 The supported values are `RAG` and `GRAPH_RAG`. The response is `200 OK` with
 the updated game representation. Repeating the same request for the current
 question is idempotent and must not consume an additional token.
+After GraphRAG is used, `question.connectionMovie` contains the revealed
+connection movie name. It is `null` before then.
 
 Response: `409 Conflict` when the requested token cannot be used in the current
 question, including trying to use RAG after GraphRAG or when no token remains.

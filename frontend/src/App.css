@@ -9,7 +9,7 @@
   display: grid;
   gap: 2rem;
   justify-items: center;
-  max-width: 64rem;
+  max-width: 90rem;
   width: 100%;
 }
 
@@ -20,13 +20,28 @@
 }
 
 .start-screen,
-.game-screen,
 .game-over-screen {
   align-items: center;
   display: grid;
   gap: 1.5rem;
   justify-items: center;
   width: min(100%, 38rem);
+}
+
+.game-layout {
+  align-items: start;
+  display: grid;
+  gap: 2rem;
+  grid-template-columns: minmax(9rem, 1fr) minmax(42rem, 50rem) minmax(9rem, 1fr);
+  width: 100%;
+}
+
+.game-screen {
+  align-items: center;
+  display: grid;
+  gap: 1.5rem;
+  justify-items: center;
+  width: 100%;
 }
 
 .game-screen h2 {
@@ -44,11 +59,19 @@
   flex-direction: column;
   gap: 0.5rem;
   padding: 0.75rem 1rem;
+  margin-top: 3.5rem;
+  width: max-content;
 }
 
 .token-list {
   display: flex;
   gap: 0.75rem;
+}
+
+.token-column {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
 }
 
 .help-token {
@@ -63,18 +86,12 @@
   display: flex;
   flex-direction: column;
   font-family: 'Syne Neo', sans-serif;
-  font-size: 0.72rem;
+  font-size: 0.62rem;
   justify-content: center;
   line-height: 1;
   padding: 0.3rem;
   transition: filter 300ms ease, transform 500ms ease, border-radius 500ms ease;
-  width: 4.75rem;
-}
-
-.help-token small {
-  font-family: sans-serif;
-  font-size: 0.58rem;
-  margin-top: 0.35rem;
+  width: 4.15rem;
 }
 
 .help-token--rag {
@@ -89,12 +106,19 @@
   transform: translateY(-0.15rem);
 }
 
-.help-token--used {
+.help-token--spent {
   animation: consume-token 600ms ease both;
-  background: #b9b9b6;
-  border-radius: 0.6rem;
-  color: #535b5e;
+  background: #aaa;
+  box-shadow: 0 0 0 1px #8b8b88;
   filter: grayscale(1);
+}
+
+.help-token--unavailable {
+  filter: none;
+}
+
+.help-token--unavailable:disabled {
+  opacity: 1;
 }
 
 .help-token:disabled {
@@ -111,7 +135,7 @@
 .question-graph {
   align-items: center;
   display: grid;
-  grid-template-columns: 9rem 3rem 9rem 3rem 9rem;
+  grid-template-columns: 9rem 3rem 9rem 3rem 3rem 3rem 9rem;
   justify-content: center;
   margin-top: 1rem;
   min-height: 14rem;
@@ -210,7 +234,7 @@ button.clue-card {
   position: relative;
 }
 
-.graph-connector span {
+.graph-person {
   align-items: center;
   background: #fffaf1;
   border: 2px dotted #014063;
@@ -218,10 +242,6 @@ button.clue-card {
   display: flex;
   height: 3rem;
   justify-content: center;
-  left: 50%;
-  position: absolute;
-  top: 50%;
-  transform: translate(-50%, -50%);
   width: 3rem;
 }
 
@@ -302,6 +322,11 @@ button.clue-card {
   width: 100%;
 }
 
+.answer-area {
+  position: relative;
+  width: min(100%, 38rem);
+}
+
 .suggestions {
   align-items: flex-start;
   background: white;
@@ -310,7 +335,20 @@ button.clue-card {
   display: flex;
   flex-direction: column;
   padding: 0.5rem;
+  position: absolute;
+  top: calc(100% + 0.25rem);
   width: 100%;
+  z-index: 2;
+}
+
+@media (max-width: 70rem) {
+  .game-layout {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .game-sidebar--left {
+    display: none;
+  }
 }
 
 @media (max-width: 36rem) {
@@ -325,13 +363,13 @@ button.clue-card {
   }
 
   .question-graph {
-    grid-template-columns: 6rem 1.25rem 6rem 1.25rem 6rem;
+    grid-template-columns: 5rem 1rem 5rem 1rem 2rem 1rem 5rem;
     min-height: 10rem;
   }
 
   .clue-card,
   .connection-placeholder {
-    width: 6rem;
+    width: 5rem;
   }
 
   .clue-card__label {
@@ -346,10 +384,23 @@ button.clue-card {
   .clue-details strong {
     font-size: 0.47rem;
   }
+
+  .game-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .token-panel {
+    grid-row: 1;
+    margin: 0 auto;
+  }
+
+  .token-column {
+    flex-direction: row;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .help-token--used,
+  .help-token--spent,
   .question-graph > .clue-card:not(.clue-card--locked) {
     animation: none;
   }

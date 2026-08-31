@@ -270,8 +270,13 @@ function GameScreen({ game, isLoading, onAnswer, onUseToken }: GameScreenProps) 
   const [answer, setAnswer] = useState('')
   const [suggestions, setSuggestions] = useState<ActorSuggestion[]>([])
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false)
+  const suppressNextSuggestionLookup = useRef(false)
 
   useEffect(() => {
+    if (suppressNextSuggestionLookup.current) {
+      suppressNextSuggestionLookup.current = false
+      return
+    }
     if (answer.length < 2) return
 
     const controller = new AbortController()
@@ -303,64 +308,70 @@ function GameScreen({ game, isLoading, onAnswer, onUseToken }: GameScreenProps) 
   }
 
   return (
-    <div className="game-screen">
-      <Typography variant="body-large">
-        Score (completed questions): {game.score}
-      </Typography>
+    <div className="game-layout">
+      <div className="game-sidebar game-sidebar--left" aria-hidden="true" />
+      <div className="game-screen">
+        <Typography variant="body-large">
+          Score (completed questions): {game.score}
+        </Typography>
 
-      <Typography as="h2" variant="title-3">
-        Who in {game.question.movie} starred in another movie with{' '}
-        {game.question.person}?
-      </Typography>
+        <Typography as="h2" variant="title-3">
+          Who in {game.question.movie} starred in another movie with{' '}
+          {game.question.person}?
+        </Typography>
 
-      <TokenPanel game={game} isLoading={isLoading} onUseToken={onUseToken} />
-
-      <form className="answer-form" onSubmit={handleSubmit}>
-        <TextInput
-          label="Your answer"
-          value={answer}
-          onChange={(event) => {
-            const value = event.target.value
-            setAnswer(value)
-            if (value.length < 2) {
-              setSuggestions([])
-              setIsLoadingSuggestions(false)
-            }
-          }}
-          isDisabled={isLoading}
-          isFluid
-          isLoading={isLoadingSuggestions}
-          htmlAttributes={{ autoComplete: 'off', autoFocus: true }}
-        />
-        <FilledButton
-          type="submit"
-          isDisabled={!answer.trim()}
-          isLoading={isLoading}
-          loadingMessage="Checking answer"
-        >
-          Submit answer
-        </FilledButton>
-      </form>
-
-      {suggestions.length > 0 && (
-        <div className="suggestions" aria-label="Actor suggestions">
-          {suggestions.map((suggestion) => (
-            <TextButton
-              key={suggestion.name}
-              type="button"
-              variant="neutral"
-              onClick={() => {
-                setAnswer(suggestion.name)
-                setSuggestions([])
+        <div className="answer-area">
+          <form className="answer-form" onSubmit={handleSubmit}>
+            <TextInput
+              label="Your answer"
+              value={answer}
+              onChange={(event) => {
+                const value = event.target.value
+                setAnswer(value)
+                if (value.length < 2) {
+                  setSuggestions([])
+                  setIsLoadingSuggestions(false)
+                }
               }}
+              isDisabled={isLoading}
+              isFluid
+              isLoading={isLoadingSuggestions}
+              htmlAttributes={{ autoComplete: 'off', autoFocus: true }}
+            />
+            <FilledButton
+              type="submit"
+              isDisabled={!answer.trim()}
+              isLoading={isLoading}
+              loadingMessage="Checking answer"
             >
-              {suggestion.name}
-            </TextButton>
-          ))}
-        </div>
-      )}
+              Submit answer
+            </FilledButton>
+          </form>
 
-      <QuestionGraph game={game} />
+          {suggestions.length > 0 && (
+            <div className="suggestions" aria-label="Actor suggestions">
+              {suggestions.map((suggestion) => (
+                <TextButton
+                  key={suggestion.name}
+                  type="button"
+                  variant="neutral"
+                  onClick={() => {
+                    suppressNextSuggestionLookup.current = true
+                    setAnswer(suggestion.name)
+                    setSuggestions([])
+                    setIsLoadingSuggestions(false)
+                  }}
+                >
+                  {suggestion.name}
+                </TextButton>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <QuestionGraph game={game} />
+      </div>
+      <TokenPanel game={game} isLoading={isLoading} onUseToken={onUseToken} />
     </div>
   )
 }
@@ -374,40 +385,67 @@ function TokenPanel({
   isLoading: boolean
   onUseToken: (type: TokenType) => Promise<void>
 }) {
-  const ragUnavailable =
-    isLoading ||
-    game.question.ragUsed ||
-    game.question.graphRagUsed ||
-    game.remainingRag === 0
-  const graphRagUnavailable =
-    isLoading || game.question.graphRagUsed || game.remainingGraphRag === 0
-
   return (
     <aside className="token-panel" aria-label="Help tokens">
       <Typography variant="body-medium">Help tokens</Typography>
       <div className="token-list">
-        <button
-          className={`help-token help-token--rag ${game.question.ragUsed ? 'help-token--used' : ''}`}
-          type="button"
-          disabled={ragUnavailable}
-          onClick={() => void onUseToken('RAG')}
-          aria-label={`Use RAG token, ${game.remainingRag} remaining`}
-        >
-          <span>{game.question.ragUsed ? 'Used' : 'RAG'}</span>
-          <small>{game.remainingRag} left</small>
-        </button>
-        <button
-          className={`help-token help-token--graph ${game.question.graphRagUsed ? 'help-token--used' : ''}`}
-          type="button"
-          disabled={graphRagUnavailable}
-          onClick={() => void onUseToken('GRAPH_RAG')}
-          aria-label={`Use GraphRAG token, ${game.remainingGraphRag} remaining`}
-        >
-          <span>{game.question.graphRagUsed ? 'Used' : 'GraphRAG'}</span>
-          <small>{game.remainingGraphRag} left</small>
-        </button>
+        <TokenColumn
+          type="RAG"
+          remaining={game.remainingRag}
+          unavailable={game.question.ragUsed || game.question.graphRagUsed}
+          isLoading={isLoading}
+          onUseToken={onUseToken}
+        />
+        <TokenColumn
+          type="GRAPH_RAG"
+          remaining={game.remainingGraphRag}
+          unavailable={game.question.graphRagUsed}
+          isLoading={isLoading}
+          onUseToken={onUseToken}
+        />
       </div>
     </aside>
+  )
+}
+
+function TokenColumn({
+  type,
+  remaining,
+  unavailable,
+  isLoading,
+  onUseToken,
+}: {
+  type: TokenType
+  remaining: number
+  unavailable: boolean
+  isLoading: boolean
+  onUseToken: (type: TokenType) => Promise<void>
+}) {
+  const label = type === 'RAG' ? 'RAG' : 'GraphRAG'
+
+  return (
+    <div className="token-column">
+      {[0, 1].map((index) => {
+        const isSpent = index < 2 - remaining
+        const isUnavailable = !isSpent && unavailable
+        return (
+          <button
+            key={index}
+            className={`help-token help-token--${type === 'RAG' ? 'rag' : 'graph'} ${isSpent ? 'help-token--spent' : ''} ${isUnavailable ? 'help-token--unavailable' : ''}`}
+            type="button"
+            disabled={isLoading || isSpent || isUnavailable}
+            onClick={() => void onUseToken(type)}
+            aria-label={
+              isSpent
+                ? `${label} token ${index + 1}, used`
+                : `Use ${label} token ${index + 1}`
+            }
+          >
+            {!isSpent && <span>{label}</span>}
+          </button>
+        )
+      })}
+    </div>
   )
 }
 
@@ -419,11 +457,17 @@ function QuestionGraph({ game }: { game: Game }) {
       <StaticClueCard label={game.question.person} />
       <GraphConnector />
       {game.question.graphRagUsed ? (
-        <ClueCard gameId={game.id} type="connection" />
+        <ClueCard
+          gameId={game.id}
+          type="connection"
+          label={game.question.connectionMovie ?? 'Connection movie'}
+        />
       ) : (
         <div className="connection-placeholder" aria-label="Hidden connection movie" />
       )}
-      <GraphConnector mystery />
+      <GraphConnector />
+      <GraphPerson />
+      <GraphConnector />
       <ClueCard
         gameId={game.id}
         type="question"
@@ -434,10 +478,14 @@ function QuestionGraph({ game }: { game: Game }) {
   )
 }
 
-function GraphConnector({ mystery = false }: { mystery?: boolean }) {
+function GraphConnector() {
+  return <div className="graph-connector" aria-hidden="true" />
+}
+
+function GraphPerson() {
   return (
-    <div className="graph-connector" aria-hidden="true">
-      {mystery && <span>?</span>}
+    <div className="graph-person" aria-label="Unknown person">
+      ?
     </div>
   )
 }

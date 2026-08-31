@@ -129,6 +129,7 @@ public class GameService {
                 new QuestionResponse(
                         question.movie(),
                         question.person(),
+                        game.graphRagUsed() ? question.connectionMovie() : null,
                         game.ragUsed(),
                         game.graphRagUsed()
                 )

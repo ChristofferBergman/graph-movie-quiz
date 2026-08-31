@@ -46,7 +46,7 @@ class GameControllerTests {
                 0,
                 2,
                 2,
-                new QuestionResponse("Rogue One", "Robert Duvall", false, false)
+                new QuestionResponse("Rogue One", "Robert Duvall", null, false, false)
         );
         when(gameService.createGame("Chris")).thenReturn(game);
 
@@ -78,7 +78,7 @@ class GameControllerTests {
                 2,
                 2,
                 1,
-                new QuestionResponse("Rogue One", "Robert Duvall", false, true)
+                new QuestionResponse("Rogue One", "Robert Duvall", "Open Range", false, true)
         );
         when(gameService.useToken(id, com.graphragmoviequiz.api.web.model.TokenType.GRAPH_RAG))
                 .thenReturn(game);
@@ -88,6 +88,7 @@ class GameControllerTests {
                         .content("{\"type\":\"GRAPH_RAG\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.remainingGraphRag").value(1))
+                .andExpect(jsonPath("$.question.connectionMovie").value("Open Range"))
                 .andExpect(jsonPath("$.question.graphRagUsed").value(true));
     }
 }

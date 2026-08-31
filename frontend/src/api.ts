@@ -1,6 +1,7 @@
 export interface Question {
   movie: string
   person: string
+  connectionMovie: string | null
   ragUsed: boolean
   graphRagUsed: boolean
 }
