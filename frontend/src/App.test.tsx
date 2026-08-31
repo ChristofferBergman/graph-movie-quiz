@@ -149,7 +149,12 @@ describe('App', () => {
       'Felicity Jones Diego Luna',
     )
     fireEvent.contextMenu(clueCard)
-    expect(screen.getByRole('dialog', { name: 'Rogue One clue' })).toBeInTheDocument()
+    const zoomedClue = screen.getByRole('dialog', { name: 'Rogue One clue' })
+    expect(zoomedClue).toBeInTheDocument()
+    expect(screen.getByText('Right-click card to zoom')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Close' })).not.toBeInTheDocument()
+    fireEvent.pointerDown(zoomedClue, { button: 2 })
+    expect(screen.queryByRole('dialog', { name: 'Rogue One clue' })).not.toBeInTheDocument()
     expect(fetchMock).toHaveBeenCalledTimes(4)
   })
 

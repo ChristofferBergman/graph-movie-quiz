@@ -392,6 +392,9 @@ function GameScreen({
         </div>
 
         <QuestionGraph game={game} />
+        <Typography variant="body-small" className="zoom-hint">
+          Right-click card to zoom
+        </Typography>
       </div>
       <TokenPanel game={game} isLoading={isLoading} onUseToken={onUseToken} />
     </div>
@@ -616,11 +619,18 @@ function ClueCard({
       </button>
       {clueError && <span className="clue-card__error">{clueError}</span>}
       {isZoomed && clue && (
-        <div className="clue-dialog" role="dialog" aria-modal="true" aria-label={`${clue.movie} clue`}>
+        <div
+          className="clue-dialog"
+          role="dialog"
+          aria-modal="true"
+          aria-label={`${clue.movie} clue`}
+          onPointerDown={() => setIsZoomed(false)}
+          onContextMenu={(event) => {
+            event.preventDefault()
+            setIsZoomed(false)
+          }}
+        >
           <div className="clue-dialog__content">
-            <button type="button" className="clue-dialog__close" onClick={() => setIsZoomed(false)}>
-              Close
-            </button>
             <div className="clue-card clue-card--zoomed clue-card--flipped">
               <span className="clue-card__inner">
                 <span className="clue-card__face clue-card__front">

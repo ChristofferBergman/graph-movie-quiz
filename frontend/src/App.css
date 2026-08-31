@@ -203,6 +203,11 @@
   width: 100%;
 }
 
+.zoom-hint {
+  color: #526c79;
+  margin-top: -1rem;
+}
+
 .clue-card {
   aspect-ratio: 676 / 1051;
   background: transparent;
@@ -350,15 +355,6 @@ button.clue-card {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-}
-
-.clue-dialog__close {
-  background: white;
-  border: 0;
-  border-radius: 0.35rem;
-  color: #014063;
-  cursor: pointer;
-  padding: 0.45rem 0.75rem;
 }
 
 .clue-card--zoomed {
