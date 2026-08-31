@@ -18,6 +18,15 @@ export interface ActorSuggestion {
   name: string
 }
 
+export type TokenType = 'RAG' | 'GRAPH_RAG'
+
+export type ClueType = 'question' | 'connection'
+
+export interface Clue {
+  movie: string
+  actors: string[]
+}
+
 export interface SubmitAnswerResponse {
   correct: boolean
   score: number
@@ -91,4 +100,15 @@ export function submitAnswer(
     method: 'POST',
     body: JSON.stringify({ name }),
   })
+}
+
+export function consumeHelpToken(gameId: string, type: TokenType): Promise<Game> {
+  return request<Game>(`/api/v1/games/${gameId}/tokens`, {
+    method: 'POST',
+    body: JSON.stringify({ type }),
+  })
+}
+
+export function loadClue(gameId: string, type: ClueType): Promise<Clue> {
+  return request<Clue>(`/api/v1/games/${gameId}/clues/${type}`)
 }

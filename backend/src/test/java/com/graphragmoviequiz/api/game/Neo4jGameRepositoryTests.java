@@ -85,7 +85,7 @@ class Neo4jGameRepositoryTests {
 
         var game = repository.findById(id);
 
-        assertThat(game).contains(new Game(id, "Chris", 3, 1, 0, lastActivity));
+        assertThat(game).contains(new Game(id, "Chris", 3, 1, 0, false, false, lastActivity));
     }
 
     @Test
@@ -101,7 +101,7 @@ class Neo4jGameRepositoryTests {
     void updatesMutableGameState() {
         var id = UUID.randomUUID();
         var lastActivity = ZonedDateTime.of(2026, 8, 31, 11, 0, 0, 0, ZoneOffset.UTC);
-        var updatedGame = new Game(id, "Chris", 4, 1, 0, lastActivity);
+        var updatedGame = new Game(id, "Chris", 4, 1, 0, false, false, lastActivity);
         configureRecord(id, "Chris", 4, 1, 0, lastActivity);
         when(transaction.run(anyString(), anyMap())).thenReturn(gameResult);
         when(gameResult.hasNext()).thenReturn(true);
@@ -144,5 +144,7 @@ class Neo4jGameRepositoryTests {
                 "lastActivity", lastActivity
         );
         properties.forEach((key, value) -> when(gameRecord.get(key)).thenReturn(Values.value(value)));
+        when(gameRecord.get("ragUsed")).thenReturn(Values.value(false));
+        when(gameRecord.get("graphRagUsed")).thenReturn(Values.value(false));
     }
 }

@@ -5,6 +5,8 @@ import com.graphragmoviequiz.api.web.model.CreateGameRequest;
 import com.graphragmoviequiz.api.web.model.GameResponse;
 import com.graphragmoviequiz.api.web.model.SubmitAnswerRequest;
 import com.graphragmoviequiz.api.web.model.SubmitAnswerResponse;
+import com.graphragmoviequiz.api.web.model.ClueResponse;
+import com.graphragmoviequiz.api.web.model.UseTokenRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -46,5 +48,23 @@ public class GameController {
             @Valid @RequestBody SubmitAnswerRequest request
     ) {
         return gameService.submitAnswer(gameId, request.name());
+    }
+
+    @PostMapping("/{gameId}/tokens")
+    GameResponse useToken(
+            @PathVariable UUID gameId,
+            @Valid @RequestBody UseTokenRequest request
+    ) {
+        return gameService.useToken(gameId, request.type());
+    }
+
+    @GetMapping("/{gameId}/clues/question")
+    ClueResponse getQuestionClue(@PathVariable UUID gameId) {
+        return gameService.getQuestionClue(gameId);
+    }
+
+    @GetMapping("/{gameId}/clues/connection")
+    ClueResponse getConnectionClue(@PathVariable UUID gameId) {
+        return gameService.getConnectionClue(gameId);
     }
 }

@@ -11,5 +11,7 @@ public interface GameRepository {
 
     Optional<Game> update(Game game);
 
+    Optional<TokenUseResult> useToken(UUID id, HelpTokenType type);
+
     void deleteById(UUID id);
 }

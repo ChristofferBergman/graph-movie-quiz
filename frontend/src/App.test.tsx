@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
@@ -103,6 +103,46 @@ describe('App', () => {
 
     await user.click(screen.getByRole('button', { name: 'Play again' }))
     expect(screen.getByLabelText('Player name')).toBeInTheDocument()
+  })
+
+  it('uses a RAG token, unlocks the question clue, flips it, and zooms it', async () => {
+    const game = createTestGame()
+    const unlockedGame = {
+      ...game,
+      remainingRag: 1,
+      question: { ...game.question, ragUsed: true },
+    }
+    localStorage.setItem('graphrag-movie-quiz.game-id', game.id)
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse(game))
+      .mockResolvedValueOnce(jsonResponse(unlockedGame))
+      .mockResolvedValueOnce(
+        jsonResponse({
+          movie: 'Rogue One',
+          actors: ['Felicity Jones', 'Diego Luna'],
+        }),
+      )
+    vi.stubGlobal('fetch', fetchMock)
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(
+      await screen.findByRole('button', {
+        name: 'Use RAG token, 2 remaining',
+      }),
+    )
+    const clueCard = await screen.findByRole('button', {
+      name: 'Rogue One clue',
+    })
+    await user.click(clueCard)
+
+    expect(await screen.findByText(/Felicity Jones/)).toHaveTextContent(
+      'Felicity Jones Diego Luna',
+    )
+    fireEvent.contextMenu(clueCard)
+    expect(screen.getByRole('dialog', { name: 'Rogue One clue' })).toBeInTheDocument()
+    expect(fetchMock).toHaveBeenCalledTimes(3)
   })
 })
 

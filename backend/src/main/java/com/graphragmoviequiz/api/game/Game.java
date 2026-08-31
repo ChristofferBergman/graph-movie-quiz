@@ -9,6 +9,8 @@ public record Game(
         int score,
         int remainingRag,
         int remainingGraphRag,
+        boolean ragUsed,
+        boolean graphRagUsed,
         ZonedDateTime lastActivity
 ) {
 }

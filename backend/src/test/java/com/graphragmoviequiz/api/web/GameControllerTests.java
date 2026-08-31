@@ -68,4 +68,26 @@ class GameControllerTests {
                 .andExpect(jsonPath("$.title").value("Invalid request"))
                 .andExpect(jsonPath("$.errors.player").value("Player name is required."));
     }
+
+    @Test
+    void usesHelpToken() throws Exception {
+        var id = UUID.randomUUID();
+        var game = new GameResponse(
+                id,
+                "Chris",
+                2,
+                2,
+                1,
+                new QuestionResponse("Rogue One", "Robert Duvall", false, true)
+        );
+        when(gameService.useToken(id, com.graphragmoviequiz.api.web.model.TokenType.GRAPH_RAG))
+                .thenReturn(game);
+
+        mockMvc.perform(post("/api/v1/games/{gameId}/tokens", id)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"type\":\"GRAPH_RAG\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.remainingGraphRag").value(1))
+                .andExpect(jsonPath("$.question.graphRagUsed").value(true));
+    }
 }

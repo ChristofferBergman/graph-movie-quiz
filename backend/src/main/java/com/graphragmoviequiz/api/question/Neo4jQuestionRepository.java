@@ -54,6 +54,7 @@ public class Neo4jQuestionRepository implements QuestionRepository {
             MATCH (p2:Person) WHERE elementId(p2) = $p2ElementId
             MATCH (m1:Movie) WHERE elementId(m1) = $m1ElementId
             MATCH (m2:Movie) WHERE elementId(m2) = $m2ElementId
+            SET g.ragUsed = false, g.graphRagUsed = false
             CREATE (g)-[:QUESTION_PERSON]->(p1),
                    (g)-[:ANSWER_PERSON]->(p2),
                    (g)-[:CLUE_MOVIE]->(m1),

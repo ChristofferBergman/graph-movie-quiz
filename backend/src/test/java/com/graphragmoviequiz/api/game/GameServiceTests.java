@@ -1,7 +1,10 @@
 package com.graphragmoviequiz.api.game;
 
 import com.graphragmoviequiz.api.question.CurrentQuestion;
+import com.graphragmoviequiz.api.question.Clue;
+import com.graphragmoviequiz.api.question.ClueRepository;
 import com.graphragmoviequiz.api.question.QuestionRepository;
+import com.graphragmoviequiz.api.web.model.TokenType;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -14,6 +17,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -28,13 +32,16 @@ class GameServiceTests {
     @Mock
     private QuestionRepository questions;
 
+    @Mock
+    private ClueRepository clues;
+
     @Test
     void createsGameAndFirstQuestion() {
         var game = gameWithScore(0);
         var question = new CurrentQuestion("Rogue One", "Robert Duvall");
         when(games.create("Chris")).thenReturn(game);
         when(questions.replaceForGame(game.id())).thenReturn(question);
-        var service = new GameService(games, questions);
+        var service = service();
 
         var response = service.createGame("  Chris  ");
 
@@ -54,7 +61,7 @@ class GameServiceTests {
                 Optional.of(invocation.getArgument(0, Game.class))
         );
         when(questions.replaceForGame(game.id())).thenReturn(nextQuestion);
-        var service = new GameService(games, questions);
+        var service = service();
 
         var response = service.submitAnswer(game.id(), "Diego Luna");
 
@@ -73,7 +80,7 @@ class GameServiceTests {
         var game = gameWithScore(2);
         when(games.findById(game.id())).thenReturn(Optional.of(game));
         when(questions.findAnswerForGame(game.id())).thenReturn(Optional.of("Diego Luna"));
-        var service = new GameService(games, questions);
+        var service = service();
 
         var response = service.submitAnswer(game.id(), "Someone Else");
 
@@ -85,6 +92,73 @@ class GameServiceTests {
         verify(questions, never()).replaceForGame(game.id());
     }
 
+    @Test
+    void usesGraphRagTokenAndReturnsPersistentQuestionState() {
+        var game = gameWithScore(2);
+        var updated = new Game(
+                game.id(), game.player(), game.score(), 2, 1, false, true, game.lastActivity()
+        );
+        when(games.useToken(game.id(), HelpTokenType.GRAPH_RAG)).thenReturn(Optional.of(
+                new TokenUseResult(TokenUseResult.Status.APPLIED, updated)
+        ));
+        when(questions.findForGame(game.id())).thenReturn(Optional.of(
+                new CurrentQuestion("Rogue One", "Robert Duvall")
+        ));
+
+        var response = service().useToken(game.id(), TokenType.GRAPH_RAG);
+
+        assertThat(response.remainingGraphRag()).isEqualTo(1);
+        assertThat(response.question().graphRagUsed()).isTrue();
+    }
+
+    @Test
+    void rejectsRagAfterGraphRagWasUsed() {
+        var game = gameWithScore(2);
+        when(games.useToken(game.id(), HelpTokenType.RAG)).thenReturn(Optional.of(
+                new TokenUseResult(TokenUseResult.Status.NOT_ALLOWED, game)
+        ));
+
+        assertThatThrownBy(() -> service().useToken(game.id(), TokenType.RAG))
+                .hasMessage("RAG cannot be used after GraphRAG on the same question.");
+    }
+
+    @Test
+    void repeatedTokenUseReturnsCurrentStateWithoutConsumingAgain() {
+        var game = new Game(
+                UUID.randomUUID(), "Chris", 2, 1, 2, true, false,
+                ZonedDateTime.of(2026, 8, 31, 10, 0, 0, 0, ZoneOffset.UTC)
+        );
+        when(games.useToken(game.id(), HelpTokenType.RAG)).thenReturn(Optional.of(
+                new TokenUseResult(TokenUseResult.Status.ALREADY_USED, game)
+        ));
+        when(questions.findForGame(game.id())).thenReturn(Optional.of(
+                new CurrentQuestion("Rogue One", "Robert Duvall")
+        ));
+
+        var response = service().useToken(game.id(), TokenType.RAG);
+
+        assertThat(response.remainingRag()).isEqualTo(1);
+        assertThat(response.question().ragUsed()).isTrue();
+    }
+
+    @Test
+    void returnsUnlockedQuestionClue() {
+        var game = gameWithScore(2);
+        when(games.findById(game.id())).thenReturn(Optional.of(game));
+        when(clues.findQuestionMovieClue(game.id())).thenReturn(Optional.of(
+                new Clue("Rogue One", java.util.List.of("Felicity Jones", "Diego Luna"))
+        ));
+
+        var clue = service().getQuestionClue(game.id());
+
+        assertThat(clue.movie()).isEqualTo("Rogue One");
+        assertThat(clue.actors()).containsExactly("Felicity Jones", "Diego Luna");
+    }
+
+    private GameService service() {
+        return new GameService(games, questions, clues);
+    }
+
     private Game gameWithScore(int score) {
         return new Game(
                 UUID.randomUUID(),
@@ -92,6 +166,8 @@ class GameServiceTests {
                 score,
                 2,
                 2,
+                false,
+                false,
                 ZonedDateTime.of(2026, 8, 31, 10, 0, 0, 0, ZoneOffset.UTC)
         );
     }

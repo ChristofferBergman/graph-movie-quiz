@@ -1,4 +1,10 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react'
+import {
+  useEffect,
+  useRef,
+  useState,
+  type FormEvent,
+  type MouseEvent,
+} from 'react'
 import {
   Banner,
   FilledButton,
@@ -10,11 +16,18 @@ import {
   createGame,
   findActorSuggestions,
   loadGame,
+  loadClue,
   submitAnswer,
+  consumeHelpToken,
   ApiError,
   type ActorSuggestion,
+  type Clue,
+  type ClueType,
   type Game,
+  type TokenType,
 } from './api'
+import clueBack from './assets/images/ClueBack.png'
+import clueFront from './assets/images/ClueFront.png'
 import './App.css'
 
 const GAME_ID_STORAGE_KEY = 'graphrag-movie-quiz.game-id'
@@ -112,6 +125,22 @@ function App() {
     }
   }
 
+  async function handleToken(type: TokenType) {
+    if (!game || requestInFlight.current) return
+    requestInFlight.current = true
+    setError(null)
+    setIsLoading(true)
+
+    try {
+      setGame(await consumeHelpToken(game.id, type))
+    } catch (requestError) {
+      setError(getErrorMessage(requestError))
+    } finally {
+      requestInFlight.current = false
+      setIsLoading(false)
+    }
+  }
+
   function handleRestart() {
     setFinalScore(null)
     setCorrectAnswer(null)
@@ -137,7 +166,13 @@ function App() {
             <Typography variant="body-large">Loading game…</Typography>
           </div>
         ) : game ? (
-          <GameScreen game={game} isLoading={isLoading} onAnswer={handleAnswer} />
+          <GameScreen
+            key={`${game.score}-${game.question.movie}-${game.question.person}`}
+            game={game}
+            isLoading={isLoading}
+            onAnswer={handleAnswer}
+            onUseToken={handleToken}
+          />
         ) : finalScore !== null ? (
           <GameOverScreen
             score={finalScore}
@@ -228,9 +263,10 @@ interface GameScreenProps {
   game: Game
   isLoading: boolean
   onAnswer: (name: string) => Promise<void>
+  onUseToken: (type: TokenType) => Promise<void>
 }
 
-function GameScreen({ game, isLoading, onAnswer }: GameScreenProps) {
+function GameScreen({ game, isLoading, onAnswer, onUseToken }: GameScreenProps) {
   const [answer, setAnswer] = useState('')
   const [suggestions, setSuggestions] = useState<ActorSuggestion[]>([])
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false)
@@ -277,6 +313,8 @@ function GameScreen({ game, isLoading, onAnswer }: GameScreenProps) {
         {game.question.person}?
       </Typography>
 
+      <TokenPanel game={game} isLoading={isLoading} onUseToken={onUseToken} />
+
       <form className="answer-form" onSubmit={handleSubmit}>
         <TextInput
           label="Your answer"
@@ -321,7 +359,199 @@ function GameScreen({ game, isLoading, onAnswer }: GameScreenProps) {
           ))}
         </div>
       )}
+
+      <QuestionGraph game={game} />
     </div>
+  )
+}
+
+function TokenPanel({
+  game,
+  isLoading,
+  onUseToken,
+}: {
+  game: Game
+  isLoading: boolean
+  onUseToken: (type: TokenType) => Promise<void>
+}) {
+  const ragUnavailable =
+    isLoading ||
+    game.question.ragUsed ||
+    game.question.graphRagUsed ||
+    game.remainingRag === 0
+  const graphRagUnavailable =
+    isLoading || game.question.graphRagUsed || game.remainingGraphRag === 0
+
+  return (
+    <aside className="token-panel" aria-label="Help tokens">
+      <Typography variant="body-medium">Help tokens</Typography>
+      <div className="token-list">
+        <button
+          className={`help-token help-token--rag ${game.question.ragUsed ? 'help-token--used' : ''}`}
+          type="button"
+          disabled={ragUnavailable}
+          onClick={() => void onUseToken('RAG')}
+          aria-label={`Use RAG token, ${game.remainingRag} remaining`}
+        >
+          <span>{game.question.ragUsed ? 'Used' : 'RAG'}</span>
+          <small>{game.remainingRag} left</small>
+        </button>
+        <button
+          className={`help-token help-token--graph ${game.question.graphRagUsed ? 'help-token--used' : ''}`}
+          type="button"
+          disabled={graphRagUnavailable}
+          onClick={() => void onUseToken('GRAPH_RAG')}
+          aria-label={`Use GraphRAG token, ${game.remainingGraphRag} remaining`}
+        >
+          <span>{game.question.graphRagUsed ? 'Used' : 'GraphRAG'}</span>
+          <small>{game.remainingGraphRag} left</small>
+        </button>
+      </div>
+    </aside>
+  )
+}
+
+function QuestionGraph({ game }: { game: Game }) {
+  const questionUnlocked = game.question.ragUsed || game.question.graphRagUsed
+
+  return (
+    <section className="question-graph" aria-label="Question graph">
+      <StaticClueCard label={game.question.person} />
+      <GraphConnector />
+      {game.question.graphRagUsed ? (
+        <ClueCard gameId={game.id} type="connection" />
+      ) : (
+        <div className="connection-placeholder" aria-label="Hidden connection movie" />
+      )}
+      <GraphConnector mystery />
+      <ClueCard
+        gameId={game.id}
+        type="question"
+        label={game.question.movie}
+        isLocked={!questionUnlocked}
+      />
+    </section>
+  )
+}
+
+function GraphConnector({ mystery = false }: { mystery?: boolean }) {
+  return (
+    <div className="graph-connector" aria-hidden="true">
+      {mystery && <span>?</span>}
+    </div>
+  )
+}
+
+function StaticClueCard({ label }: { label: string }) {
+  return (
+    <div className="clue-card clue-card--locked" aria-label={`${label} clue locked`}>
+      <img src={clueBack} alt="" />
+      <span className="clue-card__label">{label}</span>
+    </div>
+  )
+}
+
+function ClueCard({
+  gameId,
+  type,
+  label,
+  isLocked = false,
+}: {
+  gameId: string
+  type: ClueType
+  label?: string
+  isLocked?: boolean
+}) {
+  const [clue, setClue] = useState<Clue | null>(null)
+  const [isFlipped, setIsFlipped] = useState(false)
+  const [isLoadingClue, setIsLoadingClue] = useState(false)
+  const [isZoomed, setIsZoomed] = useState(false)
+  const [clueError, setClueError] = useState<string | null>(null)
+  const loadingRef = useRef(false)
+
+  async function handleFlip(event: MouseEvent<HTMLButtonElement>) {
+    if (event.detail > 1 || isLocked || loadingRef.current) return
+    if (clue) {
+      setIsFlipped((current) => !current)
+      return
+    }
+
+    loadingRef.current = true
+    setIsLoadingClue(true)
+    setClueError(null)
+    try {
+      setClue(await loadClue(gameId, type))
+      setIsFlipped(true)
+    } catch (requestError) {
+      setClueError(getErrorMessage(requestError))
+    } finally {
+      loadingRef.current = false
+      setIsLoadingClue(false)
+    }
+  }
+
+  function handleContextMenu(event: MouseEvent<HTMLButtonElement>) {
+    if (!isFlipped || !clue) return
+    event.preventDefault()
+    setIsZoomed(true)
+  }
+
+  const displayLabel = clue?.movie ?? label ?? 'Connection movie'
+
+  return (
+    <>
+      <button
+        className={`clue-card ${isLocked ? 'clue-card--locked' : ''} ${isFlipped ? 'clue-card--flipped' : ''}`}
+        type="button"
+        disabled={isLocked || isLoadingClue}
+        onClick={handleFlip}
+        onDoubleClick={(event) => event.preventDefault()}
+        onContextMenu={handleContextMenu}
+        aria-label={`${displayLabel} clue${isLocked ? ' locked' : ''}`}
+        aria-pressed={isFlipped}
+      >
+        <span className="clue-card__inner">
+          <span className="clue-card__face clue-card__back">
+            <img src={clueBack} alt="" />
+            <span className="clue-card__label">
+              {isLoadingClue ? 'Loading…' : displayLabel}
+            </span>
+          </span>
+          <span className="clue-card__face clue-card__front">
+            <img src={clueFront} alt="" />
+            {clue && <ClueDetails clue={clue} />}
+          </span>
+        </span>
+      </button>
+      {clueError && <span className="clue-card__error">{clueError}</span>}
+      {isZoomed && clue && (
+        <div className="clue-dialog" role="dialog" aria-modal="true" aria-label={`${clue.movie} clue`}>
+          <div className="clue-dialog__content">
+            <button type="button" className="clue-dialog__close" onClick={() => setIsZoomed(false)}>
+              Close
+            </button>
+            <div className="clue-card clue-card--zoomed clue-card--flipped">
+              <span className="clue-card__inner">
+                <span className="clue-card__face clue-card__front">
+                  <img src={clueFront} alt="" />
+                  <ClueDetails clue={clue} />
+                </span>
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  )
+}
+
+function ClueDetails({ clue }: { clue: Clue }) {
+  return (
+    <span className="clue-details">
+      <strong>{clue.movie}</strong>
+      <span>Actors</span>
+      <span className="clue-details__actors">{clue.actors.join('\n')}</span>
+    </span>
   )
 }
 

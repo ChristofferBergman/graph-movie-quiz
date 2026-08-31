@@ -28,11 +28,11 @@
 [x] Make repeated requests and double-clicks safe where needed
 
 *** Phase 5 - RAG and GraphRAG game mechanics ***
-[ ] Implement persistent RAG and GraphRAG token counts and usage rules
-[ ] Implement clue unlocking and retrieval in the backend API
-[ ] Implement the question graph, clue cards and card-flipping interactions
-[ ] Implement the RAG and GraphRAG token interactions and animations
-[ ] Implement clue-card zooming
+[x] Implement persistent RAG and GraphRAG token counts and usage rules
+[x] Implement clue unlocking and retrieval in the backend API
+[x] Implement the question graph, clue cards and card-flipping interactions
+[x] Implement the RAG and GraphRAG token interactions and animations
+[x] Implement clue-card zooming
 
 *** Phase 6 - High scores ***
 [ ] Implement high-score qualification and storage

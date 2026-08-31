@@ -56,9 +56,13 @@ score: number
 remainingRAG: number
 remainingGraphRAG: number
 lastActivity: datetime
+ragUsed: boolean
+graphRagUsed: boolean
 For the current question, add [QUESTION_MOVIE], [QUESTION_PERSON], [ANSWER_PERSON]
 and [CLUE_MOVIE] to the nodes for the quesion. Those relationships should be deleted when the
 next question is generated.
+The `ragUsed` and `graphRagUsed` properties represent unlocks for the current question and
+are reset to `false` whenever the question relationships are replaced.
 When a game is over, check if it should be on the high score list (i.e. there are currently
 less that three high scores, or we have a higher point that any of the current high scores).
 If it should go on the high score list add [:HIGHSCORE] from (:HighScore) to the (:Game)
