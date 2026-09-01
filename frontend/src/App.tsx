@@ -3,6 +3,7 @@ import {
   useRef,
   useState,
   type FormEvent,
+  type KeyboardEvent,
   type MouseEvent,
 } from 'react'
 import {
@@ -364,7 +365,7 @@ function GameScreen({
     <div className="game-layout">
       <HighScorePanel entries={highScores} />
       <div className="game-screen">
-        <Typography variant="body-large">
+        <Typography variant="body-large" htmlAttributes={{ 'aria-live': 'polite' }}>
           Score (completed questions): {game.score}
         </Typography>
 
@@ -389,7 +390,14 @@ function GameScreen({
               isDisabled={isLoading}
               isFluid
               isLoading={isLoadingSuggestions}
-              htmlAttributes={{ autoComplete: 'off', autoFocus: true }}
+              htmlAttributes={{
+                autoComplete: 'off',
+                autoFocus: true,
+                role: 'combobox',
+                'aria-autocomplete': 'list',
+                'aria-controls': 'actor-suggestions',
+                'aria-expanded': suggestions.length > 0,
+              }}
             />
             <FilledButton
               type="submit"
@@ -402,12 +410,18 @@ function GameScreen({
           </form>
 
           {suggestions.length > 0 && (
-            <div className="suggestions" aria-label="Actor suggestions">
+            <div
+              id="actor-suggestions"
+              className="suggestions"
+              role="listbox"
+              aria-label="Actor suggestions"
+            >
               {suggestions.map((suggestion) => (
                 <TextButton
                   key={suggestion.name}
                   type="button"
                   variant="neutral"
+                  htmlAttributes={{ role: 'option' }}
                   onClick={() => {
                     suppressNextSuggestionLookup.current = true
                     setAnswer(suggestion.name)
@@ -424,7 +438,7 @@ function GameScreen({
 
         <QuestionGraph game={game} />
         <Typography variant="body-small" className="zoom-hint">
-          Right-click card to zoom
+          Right-click a revealed card or focus it and press Z to zoom
         </Typography>
         <TextButton
           type="button"
@@ -601,6 +615,18 @@ function ClueCard({
   const [isZoomed, setIsZoomed] = useState(false)
   const [clueError, setClueError] = useState<string | null>(null)
   const loadingRef = useRef(false)
+  const cardRef = useRef<HTMLButtonElement>(null)
+  const dialogRef = useRef<HTMLDivElement>(null)
+  const wasZoomedRef = useRef(false)
+
+  useEffect(() => {
+    if (isZoomed) {
+      dialogRef.current?.focus()
+    } else if (wasZoomedRef.current) {
+      cardRef.current?.focus()
+    }
+    wasZoomedRef.current = isZoomed
+  }, [isZoomed])
 
   async function handleFlip(event: MouseEvent<HTMLButtonElement>) {
     if (event.detail > 1 || isLocked || loadingRef.current) return
@@ -629,17 +655,26 @@ function ClueCard({
     setIsZoomed(true)
   }
 
+  function handleCardKeyDown(event: KeyboardEvent<HTMLButtonElement>) {
+    if (event.key.toLowerCase() !== 'z' || !isFlipped || !clue) return
+    event.preventDefault()
+    setIsZoomed(true)
+  }
+
   const displayLabel = clue?.movie ?? label ?? 'Connection movie'
 
   return (
     <>
       <button
+        ref={cardRef}
         className={`clue-card ${isLocked ? 'clue-card--locked' : ''} ${isFlipped ? 'clue-card--flipped' : ''}`}
         type="button"
         disabled={isLocked || isLoadingClue}
         onClick={handleFlip}
         onDoubleClick={(event) => event.preventDefault()}
         onContextMenu={handleContextMenu}
+        onKeyDown={handleCardKeyDown}
+        aria-keyshortcuts="Z"
         aria-label={`${displayLabel} clue${isLocked ? ' locked' : ''}`}
         aria-pressed={isFlipped}
       >
@@ -659,11 +694,16 @@ function ClueCard({
       {clueError && <span className="clue-card__error">{clueError}</span>}
       {isZoomed && clue && (
         <div
+          ref={dialogRef}
           className="clue-dialog"
           role="dialog"
           aria-modal="true"
           aria-label={`${clue.movie} clue`}
+          tabIndex={-1}
           onPointerDown={() => setIsZoomed(false)}
+          onKeyDown={(event) => {
+            if (event.key === 'Escape') setIsZoomed(false)
+          }}
           onContextMenu={(event) => {
             event.preventDefault()
             setIsZoomed(false)

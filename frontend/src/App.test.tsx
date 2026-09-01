@@ -174,10 +174,19 @@ describe('App', () => {
     fireEvent.contextMenu(clueCard)
     const zoomedClue = screen.getByRole('dialog', { name: 'Rogue One clue' })
     expect(zoomedClue).toBeInTheDocument()
-    expect(screen.getByText('Right-click card to zoom')).toBeInTheDocument()
+    expect(
+      screen.getByText('Right-click a revealed card or focus it and press Z to zoom'),
+    ).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Close' })).not.toBeInTheDocument()
     fireEvent.pointerDown(zoomedClue, { button: 2 })
     expect(screen.queryByRole('dialog', { name: 'Rogue One clue' })).not.toBeInTheDocument()
+
+    fireEvent.keyDown(clueCard, { key: 'z' })
+    const keyboardZoomedClue = screen.getByRole('dialog', { name: 'Rogue One clue' })
+    expect(keyboardZoomedClue).toHaveFocus()
+    fireEvent.keyDown(keyboardZoomedClue, { key: 'Escape' })
+    expect(screen.queryByRole('dialog', { name: 'Rogue One clue' })).not.toBeInTheDocument()
+    expect(clueCard).toHaveFocus()
     expect(fetchMock).toHaveBeenCalledTimes(4)
   })
 
@@ -227,7 +236,7 @@ describe('App', () => {
 
     const answer = await screen.findByLabelText('Your answer')
     await user.type(answer, 'Di')
-    await user.click(await screen.findByRole('button', { name: 'Diego Luna' }))
+    await user.click(await screen.findByRole('option', { name: 'Diego Luna' }))
 
     expect(answer).toHaveValue('Diego Luna')
     expect(screen.queryByLabelText('Actor suggestions')).not.toBeInTheDocument()

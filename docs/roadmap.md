@@ -41,9 +41,9 @@
 [x] Add the high-score list to the frontend
 
 *** Phase 7 - UI completion and deployment ***
-[ ] Complete the visual design based on the mockups and supplied assets
-[ ] Improve responsive layout, keyboard accessibility and reduced-motion behavior
-[ ] Add final frontend and backend integration tests
+[x] Complete the visual design based on the mockups and supplied assets
+[x] Improve responsive layout, keyboard accessibility and reduced-motion behavior
+[x] Add final frontend and backend integration tests
 [ ] Configure frontend hosting and deploy the backend to Google Cloud Run
 [ ] Configure production secrets, health checks, logging and basic monitoring
 [ ] Run end-to-end smoke tests against the deployed application

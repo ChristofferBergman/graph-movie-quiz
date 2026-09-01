@@ -31,3 +31,9 @@ npm run build
 - Put card art and other imported images in `src/assets/images/`.
 - Put Syne Neo webfont files in `src/assets/fonts/`.
 - Use `public/` only for assets that require a fixed, unhashed URL.
+
+## Production build
+
+Copy `.env.production.example` to `.env.production`, set the deployed backend
+URL, and run `npm run build`. Hosting and smoke-test guidance is documented in
+[`../docs/deployment.md`](../docs/deployment.md).

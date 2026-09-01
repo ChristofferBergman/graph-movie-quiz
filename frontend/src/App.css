@@ -235,6 +235,12 @@ button.clue-card {
   cursor: pointer;
 }
 
+button.clue-card:focus-visible,
+.help-token:focus-visible {
+  outline: 0.2rem solid #006fd6;
+  outline-offset: 0.25rem;
+}
+
 .clue-card__inner {
   display: block;
   height: 100%;
@@ -361,6 +367,10 @@ button.clue-card {
   z-index: 10;
 }
 
+.clue-dialog:focus-visible {
+  outline: none;
+}
+
 .clue-dialog__content {
   align-items: flex-end;
   display: flex;
@@ -414,12 +424,10 @@ button.clue-card {
     grid-template-columns: minmax(0, 1fr) auto;
   }
 
-  .game-sidebar--left {
-    display: none;
-  }
-
   .high-score-panel {
-    display: none;
+    grid-column: 1 / -1;
+    grid-row: 2;
+    margin: 0 auto;
   }
 }
 
@@ -444,13 +452,13 @@ button.clue-card {
   }
 
   .question-graph {
-    grid-template-columns: 5rem 1rem 5rem 1rem 2rem 1rem 5rem;
-    min-height: 10rem;
+    grid-template-columns: 4rem 0.75rem 4rem 0.75rem 2rem 0.75rem 4rem;
+    min-height: 8rem;
   }
 
   .clue-card,
   .connection-placeholder {
-    width: 5rem;
+    width: 4rem;
   }
 
   .clue-card__label {
@@ -478,6 +486,7 @@ button.clue-card {
   .high-score-panel {
     display: grid;
     grid-row: 3;
+    grid-column: 1;
     margin: 0 auto;
   }
 

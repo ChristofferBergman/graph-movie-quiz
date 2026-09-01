@@ -26,3 +26,9 @@ frontend origins can be supplied as a comma-separated `CORS_ALLOWED_ORIGINS`
 value. Secrets must not be committed to the repository.
 
 The planned REST contract is documented in [`../docs/api.md`](../docs/api.md).
+
+## Production readiness
+
+The application accepts Cloud Run's `PORT` environment variable and exposes
+Actuator liveness and readiness endpoints. Container and deployment guidance is
+documented in [`../docs/deployment.md`](../docs/deployment.md).
