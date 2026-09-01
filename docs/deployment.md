@@ -145,13 +145,16 @@ Cloud Run keeps the existing service account, environment variables, and Secret 
 
 ## GitHub Pages Frontend
 
-1. Configure Vite's `base` as `/graph-movie-quiz/` so generated asset URLs match the GitHub Pages repository path.
+1. Vite is configured to use `/graph-movie-quiz/` as its production build
+   `base`, so generated asset URLs match the GitHub Pages repository path.
+   Local development continues to use `/`.
 
 2. In the GitHub repository, enable Pages with source `GitHub Actions`.
 
 3. Add repository variables:
 
-- `VITE_API_BASE_URL` - backend API base URL, for example `https://<cloud-run-backend-origin>`.
+- `VITE_API_BASE_URL` - backend API base URL:
+  `https://graphrag-movie-quiz-backend-721816524552.europe-west1.run.app`
 
 When creating these variables in GitHub, the variable **Name** and **Value** are separate fields. Do not include the variable name or quotes in the value.
 
@@ -159,7 +162,9 @@ These variables are build-time values. Updating them in GitHub does not change a
 
 4. Push to `main` or run the `Deploy Frontend` workflow manually.
 
-The workflow will build `frontend/` and publish `frontend/dist`.
+The workflow in `.github/workflows/deploy-frontend.yml` builds `frontend/` and
+publishes `frontend/dist`. It runs after frontend or workflow changes are pushed
+to `main`, and it can also be started manually.
 
 ## Local Development Defaults
 
