@@ -1,10 +1,29 @@
-# Production deployment handoff
+# Deployment
 
-These steps require access to the selected frontend host, Google Cloud project,
-Neo4j Aura instance, DNS (if used), and production monitoring. They are not run
-as part of local development.
+This guide describes the first production deployment shape:
 
-## Backend on Cloud Run
+- Backend: Spring Boot on Google Cloud Run.
+- Frontend: Vite static build on GitHub Pages.
+- Database: existing Neo4j Aura instance.
+
+Production configuration is split between Cloud Run environment variables and Google Secret Manager. Non-secret values can be set directly as environment variables. Secret values should be stored in Secret Manager and exposed to the container as environment variables with Cloud Run `--set-secrets`, because the Spring Boot app reads them from environment variables at runtime. Do not commit production URLs or Neo4j credentials.
+
+## Backend Environment
+
+Required Cloud Run environment variables:
+
+- `CORS_ALLOWED_ORIGINS` - `https://christofferbergman.github.io` (no trailing slash)
+- `NEO4J_URI` - `neo4j+s://<instanceid>.databases.neo4j.io`
+- `NEO4J_USERNAME` - `neo4j`
+- `NEO4J_DATABASE` - `neo4j`
+
+Required Secret Manager-backed environment variables:
+
+- `NEO4J_PASSWORD` - Neo4j password.
+
+These names are still environment variables inside the running container, but their values should come from Secret Manager, not from plain `--set-env-vars`.
+
+Cloud Run provides the `PORT` environment variable automatically.
 
 The backend container listens on Cloud Run's `PORT` environment variable and
 publishes health endpoints at:
@@ -12,56 +31,149 @@ publishes health endpoints at:
 - `/actuator/health/liveness`
 - `/actuator/health/readiness`
 
-The Dockerfile runs tests while building the application image and runs the
-service as a non-root user.
+## Cloud Run Backend: First Deployment
 
-Create the `NEO4J_PASSWORD` secret in Secret Manager before deployment. From
-the repository root, a source deployment can then be created with placeholders
-replaced by production values:
+These steps describe the first backend deployment for the `graphrag-movie-quiz` Google Cloud project. The first deployment uses Cloud Run source deployment from the local `backend/` directory.
 
-```sh
-gcloud run deploy graphrag-movie-quiz-api \
+Run these commands from the repository root unless otherwise stated.
+
+1. Select the Google Cloud project and default Cloud Run region:
+
+```bash
+gcloud config set project graphrag-movie-quiz
+gcloud config set run/region europe-west1
+```
+
+2. Enable required Google Cloud services:
+
+```bash
+gcloud services enable run.googleapis.com cloudbuild.googleapis.com secretmanager.googleapis.com artifactregistry.googleapis.com
+```
+
+3. Grant the Cloud Run Builder role to the build service account:
+
+```bash
+PROJECT_NUMBER="$(gcloud projects describe graphrag-movie-quiz \
+  --format='value(projectNumber)')"
+
+gcloud projects add-iam-policy-binding graphrag-movie-quiz \
+  --member="serviceAccount:${PROJECT_NUMBER}-compute@developer.gserviceaccount.com" \
+  --role="roles/run.builder"
+```
+
+4. Create the backend configuration values in Secret Manager.
+
+```bash
+read -s NEO4J_PASSWORD_VALUE
+printf %s "$NEO4J_PASSWORD_VALUE" |
+  gcloud secrets create NEO4J_PASSWORD --data-file=-
+unset NEO4J_PASSWORD_VALUE
+```
+
+5. Create a dedicated Cloud Run runtime service account:
+
+```bash
+gcloud iam service-accounts create graphrag-movie-quiz-backend \
+  --project graphrag-movie-quiz \
+  --display-name="GraphRAG Movie Quiz Backend"
+```
+
+6. Grant that service account access to the Secret Manager values:
+
+```bash
+SERVICE_ACCOUNT="graphrag-movie-quiz-backend@graphrag-movie-quiz.iam.gserviceaccount.com"
+
+for SECRET in NEO4J_PASSWORD; do
+  gcloud secrets add-iam-policy-binding "$SECRET" \
+    --project graphrag-movie-quiz \
+    --member="serviceAccount:${SERVICE_ACCOUNT}" \
+    --role="roles/secretmanager.secretAccessor"
+done
+```
+
+7. Deploy to Cloud Run:
+
+```bash
+gcloud run deploy graphrag-movie-quiz-backend \
   --source backend \
-  --region YOUR_REGION \
+  --region europe-west1 \
   --allow-unauthenticated \
-  --set-env-vars NEO4J_URI=YOUR_NEO4J_URI,NEO4J_USERNAME=YOUR_NEO4J_USERNAME,NEO4J_DATABASE=neo4j,CORS_ALLOWED_ORIGINS=YOUR_FRONTEND_ORIGIN \
+  --service-account graphrag-movie-quiz-backend@graphrag-movie-quiz.iam.gserviceaccount.com \
+  --set-env-vars CORS_ALLOWED_ORIGINS="https://christofferbergman.github.io",NEO4J_URI="neo4j+s://<instanceid>.databases.neo4j.io",NEO4J_USERNAME="neo4j",NEO4J_DATABASE="neo4j" \
   --set-secrets NEO4J_PASSWORD=NEO4J_PASSWORD:latest \
-  --startup-probe httpGet.path=/actuator/health/liveness,initialDelaySeconds=10,timeoutSeconds=5,periodSeconds=10,failureThreshold=6 \
-  --liveness-probe httpGet.path=/actuator/health/liveness,initialDelaySeconds=20,timeoutSeconds=5,periodSeconds=30,failureThreshold=3
+  --startup-probe httpGet.path=/actuator/health/liveness,initialDelaySeconds=10,timeoutSeconds=5,periodSeconds=10,failureThreshold=6
 ```
 
-Use the Cloud Run service URL shown after deployment as the frontend's
-`VITE_API_BASE_URL`.
+In this command, `--set-env-vars` is used for deployment-specific non-secret values, while `--set-secrets` maps Secret Manager values to the environment variable names expected by the backend.
 
-## Frontend hosting
+8. Copy the Cloud Run service URL from the deploy output. Use that URL in:
 
-The frontend is a static Vite build and does not require a server-side runtime.
-Create `frontend/.env.production` from `.env.production.example`, set the Cloud
-Run URL, and build it:
+- GitHub repository settings: **Settings** -> **Secrets and variables** -> **Actions** -> **Variables**
 
-```sh
-cd frontend
-npm ci
-npm run build
+Set these GitHub Actions repository variables:
+
+```text
+VITE_API_BASE_URL=https://<cloud-run-service-origin>
 ```
 
-Deploy the generated `frontend/dist/` directory to the selected static host.
-Configure that host to serve `index.html` for the root route and use HTTPS.
-If the final frontend origin differs from the value used above, update
-`CORS_ALLOWED_ORIGINS` on the Cloud Run service.
+In GitHub, enter only the value in the **Value** field. For example, the `VITE_API_BASE_URL` value should be `https://<cloud-run-service-origin>`, not `VITE_API_BASE_URL=https://<cloud-run-service-origin>`, and it should not be wrapped in quotes.
 
-## Production checks owned by the deployer
+These `VITE_*` values are baked into the static frontend during the GitHub Actions build. After changing any of them, rerun the `Deploy Frontend` workflow.
 
-1. Confirm the readiness and liveness URLs return HTTP 200.
-2. Confirm Cloud Run request/application logs are visible and create basic
-   uptime and server-error alerts in Cloud Monitoring.
-3. Open the hosted frontend in a clean browser and smoke-test game creation,
-   autocomplete, both token types, both clue cards, a correct answer, game over,
-   high scores, refresh restoration, and Close game.
-4. Check the browser console and Cloud Run logs for CORS or API errors.
+## Cloud Run Backend: New Revision
 
-Google Cloud references:
+Use these steps when the backend code changes and the Cloud Run service already exists.
 
-- [Deploying Cloud Run services](https://docs.cloud.google.com/run/docs/deploying)
-- [Cloud Run secrets](https://docs.cloud.google.com/run/docs/configuring/services/secrets)
-- [Cloud Run health checks](https://docs.cloud.google.com/run/docs/configuring/healthchecks)
+Run these commands from the repository root unless otherwise stated.
+
+1. Make sure the project and region are selected:
+
+```bash
+gcloud config set project graphrag-movie-quiz
+gcloud config set run/region europe-west1
+```
+
+2. Deploy a new revision from the current backend source:
+
+```bash
+gcloud run deploy graphrag-movie-quiz-backend \
+  --source backend \
+  --region europe-west1
+```
+
+Cloud Run keeps the existing service account, environment variables, and Secret Manager mappings unless they are explicitly changed. Include `--set-env-vars` or `--set-secrets` again only when changing configuration.
+
+## GitHub Pages Frontend
+
+1. Configure Vite's `base` as `/graph-movie-quiz/` so generated asset URLs match the GitHub Pages repository path.
+
+2. In the GitHub repository, enable Pages with source `GitHub Actions`.
+
+3. Add repository variables:
+
+- `VITE_API_BASE_URL` - backend API base URL, for example `https://<cloud-run-backend-origin>`.
+
+When creating these variables in GitHub, the variable **Name** and **Value** are separate fields. Do not include the variable name or quotes in the value.
+
+These variables are build-time values. Updating them in GitHub does not change an already deployed Pages build; rerun the `Deploy Frontend` workflow after every change.
+
+4. Push to `main` or run the `Deploy Frontend` workflow manually.
+
+The workflow will build `frontend/` and publish `frontend/dist`.
+
+## Local Development Defaults
+
+When the backend runs with the `local` Spring profile:
+
+- Backend listens on `http://localhost:8080`.
+- Neo4j defaults to `bolt://localhost:7687`.
+- Neo4j username defaults to `neo4j`.
+- Neo4j password defaults to `password`.
+- Neo4j database defaults to `neo4j`.
+- CORS allows `http://localhost:5173`.
+
+When the frontend runs without `VITE_API_BASE_URL`:
+
+- Vite serves the frontend at `http://localhost:5173`.
+- The frontend sends API requests to `http://localhost:8080`.
+- API paths are appended by the frontend, for example `/api/v1/games`.
