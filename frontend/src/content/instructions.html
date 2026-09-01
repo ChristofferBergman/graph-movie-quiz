@@ -1,0 +1,69 @@
+<p>
+    The movie quiz game with over half a million questions!<br><br>
+</p>
+<p>
+    All questions are in the form "Who in XXX starred in another movie with YYY?" and you get one point for each correct answer.
+    A single incorrect answer will end the game, but to your help you have a couple of lifelines, RAG tokens and GraphRAG tokens.<br><br>
+</p>
+<p>
+    <b>RAG tokens</b> can be used to get a clue about the movie asked about (XXX above). Spending a RAG token will enable the
+    clue card for the movie and if you click it you will see up to 5 actors credited in that movie. The answer will be one
+    of those. You have 2 RAG tokens to your disposal.<br><br>
+</p>
+<p>
+    <b>GraphRAG tokens</b> will traverse all the way from the movie asked about (XXX) to the actor (YYY) and will show you a clue
+    card for the movie that both YYY and the asked about actor starred in. You can flip both this clue card as well as the clue
+    card for the movie asked about (XXX) and cross-check the list of actors in both of them. You have 2 GraphRAG tokens to your disposal.<br><br>
+</p>
+<p>
+    You can zoom in on the clue cards by right-clicking them, or by focusing them and pressing Z.<br><br>
+</p>
+<p>
+    Before starting a game you have to enter your name (or nickname). This is only used for the highscore list (showing the top 3
+    highscores), and will be deleted when the game is over unless you made the highscore list. A game that is started but not finished
+    or closed will remain in the backend for 3 days after the last action and will then be deleted.<br><br>
+</p>
+<p>
+    <b>Don't cheat by having IMDB in another tab!! ;)</b><br><br>
+</p>
+<h4>What is GraphRAG?</h4>
+<p>
+    RAG (Retrieval Augmented Generation) is a method to combine the power of large language models with external knowledge sources. When
+    a question is asked to an LLM the system will first go to the knowledge source to retrieve what seems to be relevant information,
+    usually using vector search, and provide that to the LLM as context for generating a more informed answer.<br>
+    With GraphRAG that knowledge source is a graph database, which allows for a traversal of the graph from the documents found from
+    the initial vector search to find more relevant documents and provide a much richer context to the LLM.<br>
+    The purpose of this game, except to be a fun quiz, is to demonstrate what RAG and GraphRAG is and why GraphRAG often creates a
+    stronger context.<br><br>
+</p>
+<h4>Where do the questions come from?</h4>
+<p>
+    As stated above there are over half a million questions in the game, but they are not predefined. Instead the game is backed by
+    a Neo4j graph database containing all famous (see below) movies and actors from the public imdb dataset, with a schema like this:<br><br>
+    <code>(:Person)-[:ACTED_IN|:DIRECTED|:PRODUCED|:COMPOSED|:WRITTEN]->(:Movie)</code><br><br>
+    Every time a question is asked the system will find a random pattern in the following form:<br><br>
+    <code>MATCH (p1:Person)-[a1:ACTED_IN]->(m1:Movie)<-[a2:ACTED_IN]-(p2:Person)-[a3:ACTED_IN]->(m2:Movie)</code><br><br>
+    However, we must also make sure that there is only one answer to the question, so we will run the query with this predicate:<br><br>
+    <code>
+        WHERE p1<>p2 AND m1<>m2 AND a1.order < 6 AND a2.order < 6 AND a3.order < 6<br>
+        AND NOT EXISTS {<br>
+            &nbsp;&nbsp;&nbsp;&nbsp; (p1)-[:ACTED_IN]->(:Movie)<-[:ACTED_IN]-(p3:Person)-[:ACTED_IN]->(m2)<br>
+            &nbsp;&nbsp;&nbsp;&nbsp; WHERE p3 <> p1 AND p3 <> p2<br>
+        }
+    </code><br><br>
+    So in a sense we use the power of graphs to demonstrate the power of graphs...<br><br>
+</p>
+<h4>What is a famous movie and actor?</h4>
+<p>
+    There are about 13 million movies, series, episodes, specials, video games in the public imdb dataset, and about 18 million persons.
+    Including all of these would make the game extremely hard (it is, as you will see, hard enough as it is). Therefore we have included
+    only movies, and only if they have been determined to be famous, which means:<br><br>
+    <li>It has at least 1000 votes on IMDB</li>
+    <li>It has an English Wikipedia page, as well as at least 25 pages in other languages</li>
+    <li>It is not an adult movie</li><br>
+    An actor is considered famous if:<br><br>
+    <li>It has a "Known For" connecting it to at least one famous movie</li>
+    <li>It has an English Wikipedia page, as well as at least 25 pages in other languages.</li><br>
+    What this means is that there may be a different answer to a question. It could be that someone else from XXX participated with YYY,
+    but in a movie that wasn't deemed famous, and thus will not be included in the game.
+</p>

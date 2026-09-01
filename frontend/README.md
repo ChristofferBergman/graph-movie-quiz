@@ -32,6 +32,13 @@ npm run build
 - Put Syne Neo webfont files in `src/assets/fonts/`.
 - Use `public/` only for assets that require a fixed, unhashed URL.
 
+## Instructions content
+
+Edit `src/content/instructions.html` to change the text shown in the
+Instructions dialog. It is an HTML fragment, so it should contain only the
+content inside the dialog, not `<html>` or `<body>` tags. Unstyled elements
+inherit the application's font.
+
 ## Production build
 
 Copy `.env.production.example` to `.env.production`, set the deployed backend

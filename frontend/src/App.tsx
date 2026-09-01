@@ -33,6 +33,7 @@ import {
 } from './api'
 import clueBack from './assets/images/ClueBack.png'
 import clueFront from './assets/images/ClueFront.png'
+import instructionsHtml from './content/instructions.html?raw'
 import './App.css'
 
 const GAME_ID_STORAGE_KEY = 'graphrag-movie-quiz.game-id'
@@ -47,6 +48,8 @@ function App() {
     Boolean(localStorage.getItem(GAME_ID_STORAGE_KEY)),
   )
   const requestInFlight = useRef(false)
+  const instructionsButtonRef = useRef<HTMLButtonElement>(null)
+  const [instructionsOpen, setInstructionsOpen] = useState(false)
 
   useEffect(() => {
     const storedGameId = localStorage.getItem(GAME_ID_STORAGE_KEY)
@@ -228,10 +231,97 @@ function App() {
           />
         )}
       </section>
+      <div className="instructions-control">
+        <TextButton
+          ref={instructionsButtonRef}
+          type="button"
+          variant="neutral"
+          onClick={() => setInstructionsOpen(true)}
+        >
+          Instructions
+        </TextButton>
+      </div>
       <footer className="neo4j-footer" aria-label="Powered by Neo4j">
         <Logo type="full" color="color" />
       </footer>
+      {instructionsOpen && (
+        <InstructionsDialog
+          returnFocusRef={instructionsButtonRef}
+          onClose={() => setInstructionsOpen(false)}
+        />
+      )}
     </main>
+  )
+}
+
+function InstructionsDialog({
+  returnFocusRef,
+  onClose,
+}: {
+  returnFocusRef: React.RefObject<HTMLButtonElement | null>
+  onClose: () => void
+}) {
+  const dialogRef = useRef<HTMLDivElement>(null)
+  const pointerStartRef = useRef<{ x: number; y: number } | null>(null)
+  const pointerMovedRef = useRef(false)
+
+  useEffect(() => {
+    const returnFocusElement = returnFocusRef.current
+    dialogRef.current?.focus()
+    return () => returnFocusElement?.focus()
+  }, [returnFocusRef])
+
+  return (
+    <div
+      ref={dialogRef}
+      className="instructions-dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="instructions-title"
+      tabIndex={-1}
+      onPointerDown={(event) => {
+        pointerStartRef.current = { x: event.clientX, y: event.clientY }
+        pointerMovedRef.current = false
+      }}
+      onPointerMove={(event) => {
+        const start = pointerStartRef.current
+        if (!start) return
+        if (
+          Math.hypot(event.clientX - start.x, event.clientY - start.y) > 8
+        ) {
+          pointerMovedRef.current = true
+        }
+      }}
+      onPointerUp={() => {
+        if (!pointerMovedRef.current) onClose()
+        pointerStartRef.current = null
+      }}
+      onPointerCancel={() => {
+        pointerStartRef.current = null
+      }}
+      onKeyDown={(event) => {
+        if (event.key === 'Escape') onClose()
+      }}
+    >
+      <article
+        className="instructions-dialog__panel"
+        onScroll={() => {
+          pointerMovedRef.current = true
+        }}
+      >
+        <Typography
+          as="h2"
+          variant="title-2"
+          htmlAttributes={{ id: 'instructions-title' }}
+        >
+          Instructions
+        </Typography>
+        <div
+          className="instructions-dialog__body"
+          dangerouslySetInnerHTML={{ __html: instructionsHtml }}
+        />
+      </article>
+    </div>
   )
 }
 

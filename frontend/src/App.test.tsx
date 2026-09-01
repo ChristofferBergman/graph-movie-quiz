@@ -19,6 +19,33 @@ describe('App', () => {
     expect(screen.getByLabelText('Powered by Neo4j')).toBeInTheDocument()
   })
 
+  it('opens and closes the instructions without closing on a scroll gesture', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    const instructionsButton = screen.getByRole('button', { name: 'Instructions' })
+    await user.click(instructionsButton)
+    const dialog = screen.getByRole('dialog', { name: 'Instructions' })
+    expect(dialog).toHaveFocus()
+
+    fireEvent.pointerDown(dialog, { clientX: 10, clientY: 10 })
+    fireEvent.pointerMove(dialog, { clientX: 10, clientY: 40 })
+    fireEvent.pointerUp(dialog, { clientX: 10, clientY: 40 })
+    expect(dialog).toBeInTheDocument()
+
+    const instructionsPanel = dialog.querySelector('article')
+    expect(instructionsPanel).not.toBeNull()
+    fireEvent.pointerDown(dialog, { clientX: 10, clientY: 10 })
+    fireEvent.scroll(instructionsPanel!)
+    fireEvent.pointerUp(dialog, { clientX: 10, clientY: 10 })
+    expect(dialog).toBeInTheDocument()
+
+    fireEvent.pointerDown(dialog, { clientX: 10, clientY: 10 })
+    fireEvent.pointerUp(dialog, { clientX: 10, clientY: 10 })
+    expect(screen.queryByRole('dialog', { name: 'Instructions' })).not.toBeInTheDocument()
+    expect(instructionsButton).toHaveFocus()
+  })
+
   it('starts a game and shows the first question', async () => {
     const game = createTestGame()
     vi.stubGlobal(
