@@ -45,6 +45,9 @@ class GameServiceTests {
         var question = new CurrentQuestion("Rogue One", "Robert Duvall", "Open Range");
         when(games.create("Chris")).thenReturn(game);
         when(questions.replaceForGame(game.id())).thenReturn(question);
+        when(games.update(any(Game.class))).thenAnswer(invocation ->
+                Optional.of(invocation.getArgument(0, Game.class))
+        );
         var service = service();
 
         var response = service.createGame("  Chris  ");
@@ -53,6 +56,7 @@ class GameServiceTests {
         assertThat(response.player()).isEqualTo("Chris");
         assertThat(response.question().movie()).isEqualTo("Rogue One");
         assertThat(response.question().person()).isEqualTo("Robert Duvall");
+        assertThat(response.questionDeadline()).isAfter(game.lastActivity());
     }
 
     @Test
@@ -86,6 +90,8 @@ class GameServiceTests {
         var updatedGame = ArgumentCaptor.forClass(Game.class);
         verify(games).update(updatedGame.capture());
         assertThat(updatedGame.getValue().score()).isEqualTo(3);
+        assertThat(updatedGame.getValue().ragUsed()).isFalse();
+        assertThat(updatedGame.getValue().graphRagUsed()).isFalse();
         assertThat(updatedGame.getValue().lastActivity()).isAfter(game.lastActivity());
     }
 
@@ -104,6 +110,37 @@ class GameServiceTests {
         assertThat(response.game()).isNull();
         verify(highScores).finishGame(game.id());
         verify(questions, never()).replaceForGame(game.id());
+    }
+
+    @Test
+    void answerAfterDeadlineEndsGameEvenWhenNameIsCorrect() {
+        var game = gameWithScoreAndActivity(
+                2,
+                ZonedDateTime.now(ZoneOffset.UTC).minusSeconds(41)
+        );
+        when(games.findById(game.id())).thenReturn(Optional.of(game));
+        when(questions.findAnswerForGame(game.id())).thenReturn(Optional.of("Diego Luna"));
+
+        var response = service().submitAnswer(game.id(), "Diego Luna");
+
+        assertThat(response.correct()).isFalse();
+        assertThat(response.correctAnswer()).isEqualTo("Diego Luna");
+        verify(highScores).finishGame(game.id());
+        verify(questions, never()).replaceForGame(game.id());
+    }
+
+    @Test
+    void timeoutEndsGameAndReturnsCorrectAnswer() {
+        var game = gameWithScore(2);
+        when(games.findById(game.id())).thenReturn(Optional.of(game));
+        when(questions.findAnswerForGame(game.id())).thenReturn(Optional.of("Diego Luna"));
+
+        var response = service().timeoutGame(game.id());
+
+        assertThat(response.correct()).isFalse();
+        assertThat(response.score()).isEqualTo(2);
+        assertThat(response.correctAnswer()).isEqualTo("Diego Luna");
+        verify(highScores).finishGame(game.id());
     }
 
     @Test
@@ -175,6 +212,13 @@ class GameServiceTests {
     }
 
     private Game gameWithScore(int score) {
+        return gameWithScoreAndActivity(
+                score,
+                ZonedDateTime.now(ZoneOffset.UTC).minusSeconds(1)
+        );
+    }
+
+    private Game gameWithScoreAndActivity(int score, ZonedDateTime lastActivity) {
         return new Game(
                 UUID.randomUUID(),
                 "Chris",
@@ -183,7 +227,7 @@ class GameServiceTests {
                 2,
                 false,
                 false,
-                ZonedDateTime.of(2026, 8, 31, 10, 0, 0, 0, ZoneOffset.UTC)
+                lastActivity
         );
     }
 }

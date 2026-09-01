@@ -71,6 +71,8 @@ and detach delete the (:Game) with the lowest score if there are more than 3.
 If it did not make the high score list just detach delete it immediately when the game is
 over.
 lastActivity should be updated whenever an answer is given.
+It also marks the start of the current question. The authoritative question
+deadline is 40 seconds after `lastActivity`; using help tokens does not reset it.
 
 Whenever creating a new game, also cleanup old games that never finished. Use this
 query for that:

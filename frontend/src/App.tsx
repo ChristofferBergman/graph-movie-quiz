@@ -22,6 +22,7 @@ import {
   loadHighScores,
   loadClue,
   submitAnswer,
+  timeoutGame,
   consumeHelpToken,
   ApiError,
   type ActorSuggestion,
@@ -29,6 +30,7 @@ import {
   type ClueType,
   type Game,
   type HighScoreEntry,
+  type SubmitAnswerResponse,
   type TokenType,
 } from './api'
 import clueBack from './assets/images/ClueBack.png'
@@ -121,11 +123,7 @@ function App() {
       if (result.correct && result.game) {
         setGame(result.game)
       } else {
-        setHighScores(await getHighScoresSafely())
-        localStorage.removeItem(GAME_ID_STORAGE_KEY)
-        setFinalScore(result.score)
-        setCorrectAnswer(result.correctAnswer)
-        setGame(null)
+        await completeGame(result)
       }
     } catch (requestError) {
       if (requestError instanceof ApiError && requestError.status === 404) {
@@ -139,6 +137,36 @@ function App() {
       requestInFlight.current = false
       setIsLoading(false)
     }
+  }
+
+  async function handleTimeout() {
+    if (!game || requestInFlight.current) return
+    requestInFlight.current = true
+    setError(null)
+    setIsLoading(true)
+
+    try {
+      await completeGame(await timeoutGame(game.id))
+    } catch (requestError) {
+      if (requestError instanceof ApiError && requestError.status === 404) {
+        localStorage.removeItem(GAME_ID_STORAGE_KEY)
+        setGame(null)
+        setError('This game has expired. Start a new game to continue.')
+      } else {
+        setError(getErrorMessage(requestError))
+      }
+    } finally {
+      requestInFlight.current = false
+      setIsLoading(false)
+    }
+  }
+
+  async function completeGame(result: SubmitAnswerResponse) {
+    setHighScores(await getHighScoresSafely())
+    localStorage.removeItem(GAME_ID_STORAGE_KEY)
+    setFinalScore(result.score)
+    setCorrectAnswer(result.correctAnswer)
+    setGame(null)
   }
 
   async function handleToken(type: TokenType) {
@@ -231,6 +259,12 @@ function App() {
           />
         )}
       </section>
+      {game && (
+        <QuestionTimer
+          deadline={game.questionDeadline}
+          onExpire={handleTimeout}
+        />
+      )}
       <div className="instructions-control">
         <TextButton
           ref={instructionsButtonRef}
@@ -252,6 +286,44 @@ function App() {
       )}
     </main>
   )
+}
+
+function QuestionTimer({
+  deadline,
+  onExpire,
+}: {
+  deadline: string
+  onExpire: () => Promise<void>
+}) {
+  const [secondsRemaining, setSecondsRemaining] = useState(() =>
+    getSecondsUntilDeadline(deadline),
+  )
+
+  useEffect(() => {
+    const updateTimer = () => {
+      const remaining = getSecondsUntilDeadline(deadline)
+      setSecondsRemaining(remaining)
+      if (remaining === 0) void onExpire()
+    }
+    updateTimer()
+    const timer = window.setInterval(updateTimer, 250)
+    return () => window.clearInterval(timer)
+  }, [deadline, onExpire])
+
+  return (
+    <aside
+      className={`question-timer ${secondsRemaining <= 10 ? 'question-timer--urgent' : ''}`}
+      role="timer"
+      aria-label={`${secondsRemaining} seconds remaining`}
+    >
+      <Typography variant="body-small">Time left</Typography>
+      <Typography variant="title-2">{secondsRemaining}</Typography>
+    </aside>
+  )
+}
+
+function getSecondsUntilDeadline(deadline: string) {
+  return Math.max(0, Math.ceil((Date.parse(deadline) - Date.now()) / 1000))
 }
 
 function InstructionsDialog({

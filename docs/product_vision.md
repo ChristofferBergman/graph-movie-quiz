@@ -14,6 +14,9 @@ If they answer correctly they get one point and move over to the next
 question. If it is not correct they loose and their final score is
 however many points they collected so far.
 
+Each question has a 40-second time limit. The remaining seconds are shown in
+the UI. If time expires, the game ends as if the player answered incorrectly.
+
 If they get more points then number 3 on the high-score list they are
 added to that list (which is seen on the left-side of the screen).
 

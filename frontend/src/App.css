@@ -22,6 +22,27 @@
   position: fixed;
 }
 
+.question-timer {
+  align-items: center;
+  background: rgb(255 250 241 / 92%);
+  border: 1px solid #d8cdb9;
+  border-radius: 0.75rem;
+  box-shadow: 0 0.25rem 0.75rem rgb(1 64 99 / 10%);
+  color: #014063;
+  display: flex;
+  flex-direction: column;
+  left: 1.5rem;
+  min-width: 5.5rem;
+  padding: 0.65rem 0.85rem;
+  position: fixed;
+  top: 1.25rem;
+}
+
+.question-timer--urgent {
+  border-color: #b42318;
+  color: #b42318;
+}
+
 .instructions-dialog {
   align-items: center;
   background: rgb(0 25 40 / 72%);
@@ -497,6 +518,13 @@ button.clue-card:focus-visible,
   .instructions-control {
     bottom: 0.6rem;
     left: 0.75rem;
+  }
+
+  .question-timer {
+    left: 0.75rem;
+    min-width: 4.5rem;
+    padding: 0.45rem 0.65rem;
+    top: 0.75rem;
   }
 
   .instructions-dialog {

@@ -88,6 +88,35 @@ describe('App', () => {
     expect(fetchMock).toHaveBeenCalledTimes(2)
   })
 
+  it('ends the game when the question timer expires', async () => {
+    const game = {
+      ...createTestGame({ score: 2 }),
+      questionDeadline: new Date(Date.now() - 1000).toISOString(),
+    }
+    localStorage.setItem('graphrag-movie-quiz.game-id', game.id)
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse(game))
+      .mockResolvedValueOnce(jsonResponse([]))
+      .mockResolvedValueOnce(jsonResponse({
+        correct: false,
+        score: 2,
+        correctAnswer: 'Diego Luna',
+        game: null,
+      }))
+      .mockResolvedValueOnce(jsonResponse([]))
+    vi.stubGlobal('fetch', fetchMock)
+    render(<App />)
+
+    expect(await screen.findByRole('heading', { name: 'Game over' })).toBeInTheDocument()
+    expect(screen.getByText('The correct answer was Diego Luna.')).toBeInTheDocument()
+    expect(localStorage.getItem('graphrag-movie-quiz.game-id')).toBeNull()
+    expect(fetchMock).toHaveBeenCalledWith(
+      `http://localhost:8080/api/v1/games/${game.id}/timeout`,
+      expect.objectContaining({ method: 'POST' }),
+    )
+  })
+
   it('closes the active game and clears it from the browser', async () => {
     const game = createTestGame()
     localStorage.setItem('graphrag-movie-quiz.game-id', game.id)
@@ -279,6 +308,7 @@ function createTestGame(overrides: { score?: number } = {}) {
     score: overrides.score ?? 0,
     remainingRag: 2,
     remainingGraphRag: 2,
+    questionDeadline: new Date(Date.now() + 40_000).toISOString(),
     question: {
       movie: 'Rogue One',
       person: 'Robert Duvall',

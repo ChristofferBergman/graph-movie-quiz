@@ -26,6 +26,7 @@ Response: `201 Created` with a `Location` header pointing to the new game.
   "score": 0,
   "remainingRag": 2,
   "remainingGraphRag": 2,
+  "questionDeadline": "2026-09-01T09:30:40Z",
   "question": {
     "movie": "Rogue One",
     "person": "Robert Duvall",
@@ -82,6 +83,7 @@ question:
     "score": 4,
     "remainingRag": 1,
     "remainingGraphRag": 2,
+    "questionDeadline": "2026-09-01T09:31:20Z",
     "question": {
       "movie": "Arrival",
       "person": "Jeremy Renner",
@@ -105,6 +107,16 @@ game is over:
   "game": null
 }
 ```
+
+Answers received at or after `questionDeadline` end the game even if the actor
+name is correct.
+
+### Time out a question
+
+`POST /api/v1/games/{gameId}/timeout`
+
+Ends the game when the frontend countdown reaches zero. The response has the
+same representation as an incorrect answer, including `correctAnswer`.
 
 ## Actor suggestions
 

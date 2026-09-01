@@ -4,6 +4,7 @@ import com.graphragmoviequiz.api.error.GlobalExceptionHandler;
 import com.graphragmoviequiz.api.game.GameService;
 import com.graphragmoviequiz.api.web.model.GameResponse;
 import com.graphragmoviequiz.api.web.model.QuestionResponse;
+import com.graphragmoviequiz.api.web.model.SubmitAnswerResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -14,6 +15,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.util.UUID;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.verify;
@@ -48,6 +51,7 @@ class GameControllerTests {
                 0,
                 2,
                 2,
+                ZonedDateTime.now(ZoneOffset.UTC).plusSeconds(40),
                 new QuestionResponse("Rogue One", "Robert Duvall", null, false, false)
         );
         when(gameService.createGame("Chris")).thenReturn(game);
@@ -82,6 +86,20 @@ class GameControllerTests {
     }
 
     @Test
+    void timesOutGame() throws Exception {
+        var id = UUID.randomUUID();
+        when(gameService.timeoutGame(id)).thenReturn(
+                new SubmitAnswerResponse(false, 2, "Diego Luna", null)
+        );
+
+        mockMvc.perform(post("/api/v1/games/{gameId}/timeout", id))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.correct").value(false))
+                .andExpect(jsonPath("$.score").value(2))
+                .andExpect(jsonPath("$.correctAnswer").value("Diego Luna"));
+    }
+
+    @Test
     void usesHelpToken() throws Exception {
         var id = UUID.randomUUID();
         var game = new GameResponse(
@@ -90,6 +108,7 @@ class GameControllerTests {
                 2,
                 2,
                 1,
+                ZonedDateTime.now(ZoneOffset.UTC).plusSeconds(40),
                 new QuestionResponse("Rogue One", "Robert Duvall", "Open Range", false, true)
         );
         when(gameService.useToken(id, com.graphragmoviequiz.api.web.model.TokenType.GRAPH_RAG))

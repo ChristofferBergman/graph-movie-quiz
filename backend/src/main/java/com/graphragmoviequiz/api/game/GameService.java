@@ -21,6 +21,8 @@ import java.util.UUID;
 @Service
 public class GameService {
 
+    private static final int QUESTION_TIME_LIMIT_SECONDS = 40;
+
     private final GameRepository games;
     private final QuestionRepository questions;
     private final ClueRepository clues;
@@ -41,6 +43,7 @@ public class GameService {
     public GameResponse createGame(String player) {
         var game = games.create(player.trim());
         var question = questions.replaceForGame(game.id());
+        game = touch(game);
         return toResponse(game, question);
     }
 
@@ -61,34 +64,22 @@ public class GameService {
         var correctAnswer = questions.findAnswerForGame(gameId)
                 .orElseThrow(() -> new IllegalStateException("Game has no current answer."));
 
-        if (!correctAnswer.equalsIgnoreCase(name)) {
-            highScores.finishGame(gameId);
-            return new SubmitAnswerResponse(false, game.score(), correctAnswer, null);
+        if (isExpired(game) || !correctAnswer.equalsIgnoreCase(name)) {
+            return finishGame(game, correctAnswer);
         }
 
-        var updatedGame = new Game(
+        var nextQuestion = questions.replaceForGame(gameId);
+        var updatedGame = games.update(new Game(
                 game.id(),
                 game.player(),
                 game.score() + 1,
                 game.remainingRag(),
                 game.remainingGraphRag(),
-                game.ragUsed(),
-                game.graphRagUsed(),
+                false,
+                false,
                 ZonedDateTime.now(ZoneOffset.UTC)
-        );
-        updatedGame = games.update(updatedGame)
+        ))
                 .orElseThrow(() -> new GameNotFoundException(gameId));
-        var nextQuestion = questions.replaceForGame(gameId);
-        updatedGame = new Game(
-                updatedGame.id(),
-                updatedGame.player(),
-                updatedGame.score(),
-                updatedGame.remainingRag(),
-                updatedGame.remainingGraphRag(),
-                false,
-                false,
-                updatedGame.lastActivity()
-        );
 
         return new SubmitAnswerResponse(
                 true,
@@ -96,6 +87,13 @@ public class GameService {
                 null,
                 toResponse(updatedGame, nextQuestion)
         );
+    }
+
+    public SubmitAnswerResponse timeoutGame(UUID gameId) {
+        var game = getExistingGame(gameId);
+        var correctAnswer = questions.findAnswerForGame(gameId)
+                .orElseThrow(() -> new IllegalStateException("Game has no current answer."));
+        return finishGame(game, correctAnswer);
     }
 
     public GameResponse useToken(UUID gameId, TokenType type) {
@@ -139,6 +137,7 @@ public class GameService {
                 game.score(),
                 game.remainingRag(),
                 game.remainingGraphRag(),
+                game.lastActivity().plusSeconds(QUESTION_TIME_LIMIT_SECONDS),
                 new QuestionResponse(
                         question.movie(),
                         question.person(),
@@ -147,6 +146,29 @@ public class GameService {
                         game.graphRagUsed()
                 )
         );
+    }
+
+    private Game touch(Game game) {
+        return games.update(new Game(
+                game.id(),
+                game.player(),
+                game.score(),
+                game.remainingRag(),
+                game.remainingGraphRag(),
+                game.ragUsed(),
+                game.graphRagUsed(),
+                ZonedDateTime.now(ZoneOffset.UTC)
+        )).orElseThrow(() -> new GameNotFoundException(game.id()));
+    }
+
+    private boolean isExpired(Game game) {
+        return !ZonedDateTime.now(ZoneOffset.UTC)
+                .isBefore(game.lastActivity().plusSeconds(QUESTION_TIME_LIMIT_SECONDS));
+    }
+
+    private SubmitAnswerResponse finishGame(Game game, String correctAnswer) {
+        highScores.finishGame(game.id());
+        return new SubmitAnswerResponse(false, game.score(), correctAnswer, null);
     }
 
     private ApiException conflict(String detail) {

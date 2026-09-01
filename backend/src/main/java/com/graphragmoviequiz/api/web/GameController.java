@@ -57,6 +57,11 @@ public class GameController {
         return gameService.submitAnswer(gameId, request.name());
     }
 
+    @PostMapping("/{gameId}/timeout")
+    SubmitAnswerResponse timeoutGame(@PathVariable UUID gameId) {
+        return gameService.timeoutGame(gameId);
+    }
+
     @PostMapping("/{gameId}/tokens")
     GameResponse useToken(
             @PathVariable UUID gameId,

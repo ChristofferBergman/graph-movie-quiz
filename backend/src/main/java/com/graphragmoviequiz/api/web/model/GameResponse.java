@@ -1,6 +1,7 @@
 package com.graphragmoviequiz.api.web.model;
 
 import java.util.UUID;
+import java.time.ZonedDateTime;
 
 public record GameResponse(
         UUID id,
@@ -8,6 +9,7 @@ public record GameResponse(
         int score,
         int remainingRag,
         int remainingGraphRag,
+        ZonedDateTime questionDeadline,
         QuestionResponse question
 ) {
 }

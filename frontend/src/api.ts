@@ -12,6 +12,7 @@ export interface Game {
   score: number
   remainingRag: number
   remainingGraphRag: number
+  questionDeadline: string
   question: Question
 }
 
@@ -111,6 +112,12 @@ export function submitAnswer(
   return request<SubmitAnswerResponse>(`/api/v1/games/${gameId}/answers`, {
     method: 'POST',
     body: JSON.stringify({ name }),
+  })
+}
+
+export function timeoutGame(gameId: string): Promise<SubmitAnswerResponse> {
+  return request<SubmitAnswerResponse>(`/api/v1/games/${gameId}/timeout`, {
+    method: 'POST',
   })
 }
 
