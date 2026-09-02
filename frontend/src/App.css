@@ -509,6 +509,10 @@ button.clue-card:focus-visible,
   z-index: 2;
 }
 
+.suggestions [role='option'][aria-selected='true'] {
+  background: #e3f2f7;
+}
+
 @media (max-width: 70rem) {
   .game-layout {
     grid-template-columns: minmax(0, 1fr) auto;

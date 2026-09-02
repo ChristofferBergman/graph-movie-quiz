@@ -313,6 +313,34 @@ describe('App', () => {
     await new Promise((resolve) => window.setTimeout(resolve, 250))
     expect(fetchMock).toHaveBeenCalledTimes(3)
   })
+
+  it('selects an autocomplete result with the keyboard', async () => {
+    const game = createTestGame()
+    localStorage.setItem('graphrag-movie-quiz.game-id', game.id)
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse(game))
+      .mockResolvedValueOnce(jsonResponse([]))
+      .mockResolvedValueOnce(
+        jsonResponse([{ name: 'Diana Lee Inosanto' }, { name: 'Diego Luna' }]),
+      )
+    vi.stubGlobal('fetch', fetchMock)
+    const user = userEvent.setup()
+    render(<App />)
+
+    const answer = await screen.findByLabelText('Your answer')
+    await user.type(answer, 'Di')
+    const options = await screen.findAllByRole('option')
+
+    await user.keyboard('{ArrowDown}{ArrowDown}')
+    expect(options[1]).toHaveAttribute('aria-selected', 'true')
+    expect(answer).toHaveAttribute('aria-activedescendant', 'actor-suggestion-1')
+
+    await user.keyboard('{Enter}')
+    expect(answer).toHaveValue('Diego Luna')
+    expect(screen.queryByLabelText('Actor suggestions')).not.toBeInTheDocument()
+    expect(fetchMock).toHaveBeenCalledTimes(3)
+  })
 })
 
 function createTestGame(overrides: { score?: number } = {}) {

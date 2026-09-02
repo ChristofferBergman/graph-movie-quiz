@@ -487,6 +487,7 @@ function GameScreen({
 }: GameScreenProps) {
   const [answer, setAnswer] = useState('')
   const [suggestions, setSuggestions] = useState<ActorSuggestion[]>([])
+  const [highlightedSuggestion, setHighlightedSuggestion] = useState(-1)
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false)
   const suppressNextSuggestionLookup = useRef(false)
   const isTouchDevice = useIsTouchDevice()
@@ -503,9 +504,11 @@ function GameScreen({
       setIsLoadingSuggestions(true)
       try {
         setSuggestions(await findActorSuggestions(answer, controller.signal))
+        setHighlightedSuggestion(-1)
       } catch (requestError) {
         if (!(requestError instanceof DOMException && requestError.name === 'AbortError')) {
           setSuggestions([])
+          setHighlightedSuggestion(-1)
         }
       } finally {
         if (!controller.signal.aborted) setIsLoadingSuggestions(false)
@@ -527,6 +530,38 @@ function GameScreen({
     await onAnswer(answer)
     setAnswer('')
     setSuggestions([])
+    setHighlightedSuggestion(-1)
+  }
+
+  function selectSuggestion(suggestion: ActorSuggestion) {
+    suppressNextSuggestionLookup.current = true
+    setAnswer(suggestion.name)
+    setSuggestions([])
+    setHighlightedSuggestion(-1)
+    setIsLoadingSuggestions(false)
+  }
+
+  function handleAnswerKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+    if (suggestions.length === 0) return
+
+    if (event.key === 'ArrowDown') {
+      event.preventDefault()
+      setHighlightedSuggestion((current) =>
+        current < suggestions.length - 1 ? current + 1 : 0,
+      )
+    } else if (event.key === 'ArrowUp') {
+      event.preventDefault()
+      setHighlightedSuggestion((current) =>
+        current > 0 ? current - 1 : suggestions.length - 1,
+      )
+    } else if (event.key === 'Enter' && highlightedSuggestion >= 0) {
+      event.preventDefault()
+      selectSuggestion(suggestions[highlightedSuggestion])
+    } else if (event.key === 'Escape') {
+      event.preventDefault()
+      setSuggestions([])
+      setHighlightedSuggestion(-1)
+    }
   }
 
   return (
@@ -550,6 +585,7 @@ function GameScreen({
               onChange={(event) => {
                 const value = event.target.value
                 setAnswer(value)
+                setHighlightedSuggestion(-1)
                 if (value.length < 2) {
                   setSuggestions([])
                   setIsLoadingSuggestions(false)
@@ -565,6 +601,11 @@ function GameScreen({
                 'aria-autocomplete': 'list',
                 'aria-controls': 'actor-suggestions',
                 'aria-expanded': suggestions.length > 0,
+                'aria-activedescendant':
+                  highlightedSuggestion >= 0
+                    ? `actor-suggestion-${highlightedSuggestion}`
+                    : undefined,
+                onKeyDown: handleAnswerKeyDown,
               }}
             />
             <FilledButton
@@ -584,18 +625,18 @@ function GameScreen({
               role="listbox"
               aria-label="Actor suggestions"
             >
-              {suggestions.map((suggestion) => (
+              {suggestions.map((suggestion, index) => (
                 <TextButton
                   key={suggestion.name}
                   type="button"
                   variant="neutral"
-                  htmlAttributes={{ role: 'option' }}
-                  onClick={() => {
-                    suppressNextSuggestionLookup.current = true
-                    setAnswer(suggestion.name)
-                    setSuggestions([])
-                    setIsLoadingSuggestions(false)
+                  htmlAttributes={{
+                    id: `actor-suggestion-${index}`,
+                    role: 'option',
+                    'aria-selected': highlightedSuggestion === index,
+                    onMouseEnter: () => setHighlightedSuggestion(index),
                   }}
+                  onClick={() => selectSuggestion(suggestion)}
                 >
                   {suggestion.name}
                 </TextButton>

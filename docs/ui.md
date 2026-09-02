@@ -26,6 +26,9 @@ autocomplete option. The string matching should be case insensitive.
 If two actors have the same name, it doesn't matter which one you choose.
 You submit the guess by pressing enter, or clicking the arrow button.
 The autocomplete should be alphabetically ordered.
+When suggestions are open, the up and down arrow keys should highlight an
+option and Enter should select the highlighted option. Escape closes the
+suggestions.
 The API for submitting an answer should only take the name.
 
 The frontend will get the UUID of the game and need to remember that.
