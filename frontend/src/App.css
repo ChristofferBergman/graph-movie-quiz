@@ -472,16 +472,6 @@ button.clue-card:focus-visible,
   width: min(21rem, 72vw);
 }
 
-.clue-card--zoomed .clue-card__inner {
-  transform: none;
-  transform-style: flat;
-}
-
-.clue-card--zoomed .clue-card__front {
-  backface-visibility: visible;
-  transform: none;
-}
-
 .clue-card--zoomed .clue-details {
   font-size: 1.1rem;
   gap: 0.8rem;
@@ -559,7 +549,20 @@ button.clue-card:focus-visible,
 
   .instructions-dialog__panel {
     max-height: calc(100dvh - 2rem);
+    min-width: 0;
+    overflow-x: hidden;
     padding: 1.5rem;
+    width: 100%;
+  }
+
+  .instructions-dialog__body {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .instructions-dialog__body code {
+    white-space: normal;
+    word-break: break-word;
   }
 
   .neo4j-footer svg {

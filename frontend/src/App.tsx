@@ -928,12 +928,8 @@ function ClueCard({
         >
           <div className="clue-dialog__content">
             <div className="clue-card clue-card--zoomed">
-              <span className="clue-card__inner">
-                <span className="clue-card__face clue-card__front">
-                  <img src={clueFront} alt="" />
-                  <ClueDetails clue={clue} />
-                </span>
-              </span>
+              <img src={clueFront} alt="" />
+              <ClueDetails clue={clue} />
             </div>
           </div>
         </div>

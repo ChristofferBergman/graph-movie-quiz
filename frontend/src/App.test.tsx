@@ -235,6 +235,9 @@ describe('App', () => {
     })
     await new Promise((resolve) => window.setTimeout(resolve, 550))
     const touchZoomedClue = screen.getByRole('dialog', { name: 'Rogue One clue' })
+    expect(touchZoomedClue.querySelector('.clue-card--zoomed > img')).not.toBeNull()
+    expect(touchZoomedClue.querySelector('.clue-card--zoomed > .clue-details')).not.toBeNull()
+    expect(touchZoomedClue.querySelector('.clue-card--zoomed .clue-card__inner')).toBeNull()
     fireEvent.pointerDown(touchZoomedClue)
     expect(screen.queryByRole('dialog', { name: 'Rogue One clue' })).not.toBeInTheDocument()
 
