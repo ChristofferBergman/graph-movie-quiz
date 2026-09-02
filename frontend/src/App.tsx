@@ -610,7 +610,7 @@ function GameScreen({
             Right-click a revealed card or focus it and press Z to zoom
           </span>
           <span className="zoom-hint__touch">
-            Hold finger pressed on card to zoom in
+            Long press a flipped card to zoom in
           </span>
         </Typography>
         <TextButton
@@ -927,7 +927,7 @@ function ClueCard({
           }}
         >
           <div className="clue-dialog__content">
-            <div className="clue-card clue-card--zoomed clue-card--flipped">
+            <div className="clue-card clue-card--zoomed">
               <span className="clue-card__inner">
                 <span className="clue-card__face clue-card__front">
                   <img src={clueFront} alt="" />

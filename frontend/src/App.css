@@ -472,6 +472,16 @@ button.clue-card:focus-visible,
   width: min(21rem, 72vw);
 }
 
+.clue-card--zoomed .clue-card__inner {
+  transform: none;
+  transform-style: flat;
+}
+
+.clue-card--zoomed .clue-card__front {
+  backface-visibility: visible;
+  transform: none;
+}
+
 .clue-card--zoomed .clue-details {
   font-size: 1.1rem;
   gap: 0.8rem;
