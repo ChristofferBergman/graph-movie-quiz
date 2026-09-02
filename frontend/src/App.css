@@ -651,6 +651,21 @@ button.clue-card:focus-visible,
   .zoom-hint__touch {
     display: inline;
   }
+
+  /* Keep iOS Safari from temporarily compositing the PNG above newly mounted
+     clue text while the long-press pointer is still down. */
+  .clue-card--zoomed {
+    isolation: isolate;
+  }
+
+  .clue-card--zoomed > .clue-card__image {
+    z-index: 0;
+  }
+
+  .clue-card--zoomed > .clue-details {
+    transform: translateZ(0);
+    z-index: 1;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

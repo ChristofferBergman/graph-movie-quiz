@@ -969,7 +969,7 @@ function ClueCard({
         >
           <div className="clue-dialog__content">
             <div className="clue-card clue-card--zoomed">
-              <img src={clueFront} alt="" />
+              <img className="clue-card__image" src={clueFront} alt="" />
               <ClueDetails clue={clue} />
             </div>
           </div>
