@@ -315,7 +315,9 @@ button.clue-card {
 
 button.clue-card--flipped {
   -webkit-touch-callout: none;
+  -webkit-user-select: none;
   touch-action: manipulation;
+  user-select: none;
 }
 
 button.clue-card:focus-visible,
@@ -442,6 +444,8 @@ button.clue-card:focus-visible,
 }
 
 .clue-dialog {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
   align-items: center;
   background: rgb(0 25 40 / 68%);
   display: flex;
@@ -449,6 +453,7 @@ button.clue-card:focus-visible,
   justify-content: center;
   padding: 1rem;
   position: fixed;
+  user-select: none;
   z-index: 10;
 }
 
@@ -586,10 +591,13 @@ button.clue-card:focus-visible,
   }
 
   .graph-person {
-    border-width: 1px;
-    font-size: 0.625rem;
-    height: 1.333rem;
-    width: 1.333rem;
+    font-size: 0.875rem;
+    height: 2rem;
+    width: 2rem;
+  }
+
+  .clue-card--zoomed {
+    width: min(21rem, 72vw);
   }
 
   .game-layout {
