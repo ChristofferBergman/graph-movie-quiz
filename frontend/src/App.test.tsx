@@ -227,6 +227,17 @@ describe('App', () => {
     expect(await screen.findByText(/Felicity Jones/)).toHaveTextContent(
       'Felicity Jones Diego Luna',
     )
+
+    fireEvent.pointerDown(clueCard, {
+      pointerType: 'touch',
+      clientX: 10,
+      clientY: 10,
+    })
+    await new Promise((resolve) => window.setTimeout(resolve, 550))
+    const touchZoomedClue = screen.getByRole('dialog', { name: 'Rogue One clue' })
+    fireEvent.pointerDown(touchZoomedClue)
+    expect(screen.queryByRole('dialog', { name: 'Rogue One clue' })).not.toBeInTheDocument()
+
     fireEvent.contextMenu(clueCard)
     const zoomedClue = screen.getByRole('dialog', { name: 'Rogue One clue' })
     expect(zoomedClue).toBeInTheDocument()

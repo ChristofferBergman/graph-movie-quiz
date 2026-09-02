@@ -13,6 +13,12 @@ Movie name / Actor name under the CLUE text
 Frontside of the card:
 Movie name at the top followed by a list of (top 5) actors
 
+Card text should scale down when necessary to remain within the available
+card area, particularly on the mobile layout. A flipped card can be zoomed by
+right-clicking it on desktop or holding a finger pressed on it on a touch
+device. The helper text should describe the interaction appropriate for the
+current pointer type.
+
 Regarding the answer-field:
 They must not choose an autocomplete option, but they must have exact
 spelling (except casing) so it would probably be best to choose an

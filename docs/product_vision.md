@@ -35,7 +35,9 @@ on the far right (the movie YYY) becomes enabled (changed from grey to
 color) and if clicked it is turned over (again with an animation showing
 it flip). There you will see the first 5 credited actors in that movie.
 Right-clicking the flipped card will show a zoomed-in version as a
-popup dialog. This token is now forfit for the rest of the game.
+popup dialog. On a touch device, holding a finger pressed on the flipped
+card provides the same zoom interaction. This token is now forfit for the
+rest of the game.
 
 See slides 2-3 in the mockup PDF.
 

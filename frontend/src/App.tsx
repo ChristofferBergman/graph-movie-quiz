@@ -1,10 +1,12 @@
 import {
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type FormEvent,
   type KeyboardEvent,
   type MouseEvent,
+  type PointerEvent,
 } from 'react'
 import {
   Banner,
@@ -487,6 +489,7 @@ function GameScreen({
   const [suggestions, setSuggestions] = useState<ActorSuggestion[]>([])
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false)
   const suppressNextSuggestionLookup = useRef(false)
+  const isTouchDevice = useIsTouchDevice()
 
   useEffect(() => {
     if (suppressNextSuggestionLookup.current) {
@@ -518,6 +521,9 @@ function GameScreen({
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!answer.trim()) return
+    if (isTouchDevice) {
+      event.currentTarget.querySelector('input')?.blur()
+    }
     await onAnswer(answer)
     setAnswer('')
     setSuggestions([])
@@ -554,7 +560,7 @@ function GameScreen({
               isLoading={isLoadingSuggestions}
               htmlAttributes={{
                 autoComplete: 'off',
-                autoFocus: true,
+                autoFocus: !isTouchDevice,
                 role: 'combobox',
                 'aria-autocomplete': 'list',
                 'aria-controls': 'actor-suggestions',
@@ -600,7 +606,12 @@ function GameScreen({
 
         <QuestionGraph game={game} />
         <Typography variant="body-small" className="zoom-hint">
-          Right-click a revealed card or focus it and press Z to zoom
+          <span className="zoom-hint__desktop">
+            Right-click a revealed card or focus it and press Z to zoom
+          </span>
+          <span className="zoom-hint__touch">
+            Hold finger pressed on card to zoom in
+          </span>
         </Typography>
         <TextButton
           type="button"
@@ -755,7 +766,7 @@ function StaticClueCard({ label }: { label: string }) {
   return (
     <div className="clue-card clue-card--locked" aria-label={`${label} clue locked`}>
       <img src={clueBack} alt="" />
-      <span className="clue-card__label">{label}</span>
+      <FittedCardLabel>{label}</FittedCardLabel>
     </div>
   )
 }
@@ -780,6 +791,11 @@ function ClueCard({
   const cardRef = useRef<HTMLButtonElement>(null)
   const dialogRef = useRef<HTMLDivElement>(null)
   const wasZoomedRef = useRef(false)
+  const longPressTimerRef = useRef<number | null>(null)
+  const longPressStartRef = useRef<{ x: number; y: number } | null>(null)
+  const suppressClickUntilRef = useRef(0)
+
+  useEffect(() => clearLongPress, [])
 
   useEffect(() => {
     if (isZoomed) {
@@ -791,6 +807,9 @@ function ClueCard({
   }, [isZoomed])
 
   async function handleFlip(event: MouseEvent<HTMLButtonElement>) {
+    if (Date.now() < suppressClickUntilRef.current) {
+      return
+    }
     if (event.detail > 1 || isLocked || loadingRef.current) return
     if (clue) {
       setIsFlipped((current) => !current)
@@ -823,6 +842,37 @@ function ClueCard({
     setIsZoomed(true)
   }
 
+  function clearLongPress() {
+    if (longPressTimerRef.current !== null) {
+      window.clearTimeout(longPressTimerRef.current)
+      longPressTimerRef.current = null
+    }
+    longPressStartRef.current = null
+  }
+
+  function handlePointerDown(event: PointerEvent<HTMLButtonElement>) {
+    if (event.pointerType !== 'touch' || !isFlipped || !clue) return
+    clearLongPress()
+    longPressStartRef.current = { x: event.clientX, y: event.clientY }
+    longPressTimerRef.current = window.setTimeout(() => {
+      suppressClickUntilRef.current = Date.now() + 750
+      longPressTimerRef.current = null
+      longPressStartRef.current = null
+      setIsZoomed(true)
+    }, 500)
+  }
+
+  function handlePointerMove(event: PointerEvent<HTMLButtonElement>) {
+    const start = longPressStartRef.current
+    if (
+      start &&
+      (Math.abs(event.clientX - start.x) > 10 ||
+        Math.abs(event.clientY - start.y) > 10)
+    ) {
+      clearLongPress()
+    }
+  }
+
   const displayLabel = clue?.movie ?? label ?? 'Connection movie'
 
   return (
@@ -836,6 +886,11 @@ function ClueCard({
         onDoubleClick={(event) => event.preventDefault()}
         onContextMenu={handleContextMenu}
         onKeyDown={handleCardKeyDown}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={clearLongPress}
+        onPointerCancel={clearLongPress}
+        onPointerLeave={clearLongPress}
         aria-keyshortcuts="Z"
         aria-label={`${displayLabel} clue${isLocked ? ' locked' : ''}`}
         aria-pressed={isFlipped}
@@ -843,9 +898,9 @@ function ClueCard({
         <span className="clue-card__inner">
           <span className="clue-card__face clue-card__back">
             <img src={clueBack} alt="" />
-            <span className="clue-card__label">
+            <FittedCardLabel>
               {isLoadingClue ? 'Loading…' : displayLabel}
-            </span>
+            </FittedCardLabel>
           </span>
           <span className="clue-card__face clue-card__front">
             <img src={clueFront} alt="" />
@@ -888,13 +943,71 @@ function ClueCard({
 }
 
 function ClueDetails({ clue }: { clue: Clue }) {
+  const detailsRef = useRef<HTMLSpanElement>(null)
+  useFitCardText(detailsRef, [clue.movie, ...clue.actors].join('\u0000'))
+
   return (
-    <span className="clue-details">
+    <span ref={detailsRef} className="clue-details">
       <strong>{clue.movie}</strong>
       <span>Actors</span>
       <span className="clue-details__actors">{clue.actors.join('\n')}</span>
     </span>
   )
+}
+
+function FittedCardLabel({ children }: { children: string }) {
+  const labelRef = useRef<HTMLSpanElement>(null)
+  useFitCardText(labelRef, children)
+  return (
+    <span ref={labelRef} className="clue-card__label">
+      {children}
+    </span>
+  )
+}
+
+function useFitCardText(
+  elementRef: React.RefObject<HTMLElement | null>,
+  contentKey: string,
+) {
+  useLayoutEffect(() => {
+    const fitText = () => {
+      const element = elementRef.current
+      if (!element) return
+
+      let scale = 1
+      element.style.setProperty('--card-text-scale', String(scale))
+      while (
+        scale > 0.55 &&
+        (element.scrollHeight > element.clientHeight + 1 ||
+          element.scrollWidth > element.clientWidth + 1)
+      ) {
+        scale -= 0.05
+        element.style.setProperty('--card-text-scale', scale.toFixed(2))
+      }
+    }
+
+    fitText()
+    window.addEventListener('resize', fitText)
+    return () => window.removeEventListener('resize', fitText)
+  }, [elementRef, contentKey])
+}
+
+function useIsTouchDevice() {
+  const query = '(hover: none) and (pointer: coarse)'
+  const [isTouchDevice, setIsTouchDevice] = useState(() =>
+    typeof window.matchMedia === 'function' && window.matchMedia(query).matches,
+  )
+
+  useEffect(() => {
+    if (typeof window.matchMedia !== 'function') return
+    const mediaQuery = window.matchMedia(query)
+    const update = () => setIsTouchDevice(mediaQuery.matches)
+    update()
+    mediaQuery.addEventListener('change', update)
+    return () => mediaQuery.removeEventListener('change', update)
+  }, [])
+
+  return isTouchDevice
 }
 
 function getErrorMessage(error: unknown): string {
