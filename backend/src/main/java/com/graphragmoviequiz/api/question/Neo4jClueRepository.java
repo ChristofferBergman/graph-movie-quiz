@@ -18,7 +18,6 @@ public class Neo4jClueRepository implements ClueRepository {
             MATCH (g:Game {uuid: $uuid})-[:QUESTION_MOVIE]->(movie:Movie)
             WHERE coalesce(g.ragUsed, false) OR coalesce(g.graphRagUsed, false)
             MATCH (actor:Person)-[credit:ACTED_IN]->(movie)
-            WHERE credit.order < 6
             WITH movie, actor ORDER BY credit.order
             RETURN DISTINCT movie.title AS movie, actor.name AS actor
             LIMIT 5
@@ -28,7 +27,6 @@ public class Neo4jClueRepository implements ClueRepository {
             MATCH (g:Game {uuid: $uuid})-[:CLUE_MOVIE]->(movie:Movie)
             WHERE coalesce(g.graphRagUsed, false)
             MATCH (actor:Person)-[credit:ACTED_IN]->(movie)
-            WHERE credit.order < 6
             WITH movie, actor ORDER BY credit.order
             RETURN DISTINCT movie.title AS movie, actor.name AS actor
             LIMIT 5
