@@ -62,7 +62,7 @@ describe('App', () => {
 
     expect(
       await screen.findByRole('heading', {
-        name: 'Who in Rogue One starred in another movie with Robert Duvall?',
+        name: 'Who in Rogue One (2016) starred in another movie with Robert Duvall (born 1931)?',
       }),
     ).toBeInTheDocument()
     expect(localStorage.getItem('graphrag-movie-quiz.game-id')).toBe(game.id)
@@ -357,7 +357,9 @@ function createTestGame(overrides: { score?: number } = {}) {
     questionDeadline: new Date(Date.now() + 40_000).toISOString(),
     question: {
       movie: 'Rogue One',
+      movieYear: 2016,
       person: 'Robert Duvall',
+      personBorn: 1931,
       connectionMovie: null,
       ragUsed: false,
       graphRagUsed: false,

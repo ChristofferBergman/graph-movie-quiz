@@ -140,7 +140,9 @@ public class GameService {
                 game.lastActivity().plusSeconds(QUESTION_TIME_LIMIT_SECONDS),
                 new QuestionResponse(
                         question.movie(),
+                        question.movieYear(),
                         question.person(),
+                        question.personBorn(),
                         game.graphRagUsed() ? question.connectionMovie() : null,
                         game.ragUsed(),
                         game.graphRagUsed()

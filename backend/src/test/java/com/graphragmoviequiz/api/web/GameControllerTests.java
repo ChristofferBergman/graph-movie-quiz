@@ -52,7 +52,7 @@ class GameControllerTests {
                 2,
                 2,
                 ZonedDateTime.now(ZoneOffset.UTC).plusSeconds(40),
-                new QuestionResponse("Rogue One", "Robert Duvall", null, false, false)
+                new QuestionResponse("Rogue One", 2016, "Robert Duvall", 1931, null, false, false)
         );
         when(gameService.createGame("Chris")).thenReturn(game);
 
@@ -62,7 +62,9 @@ class GameControllerTests {
                 .andExpect(status().isCreated())
                 .andExpect(header().string("Location", "/api/v1/games/" + id))
                 .andExpect(jsonPath("$.id").value(id.toString()))
-                .andExpect(jsonPath("$.question.movie").value("Rogue One"));
+                .andExpect(jsonPath("$.question.movie").value("Rogue One"))
+                .andExpect(jsonPath("$.question.movieYear").value(2016))
+                .andExpect(jsonPath("$.question.personBorn").value(1931));
     }
 
     @Test
@@ -109,7 +111,7 @@ class GameControllerTests {
                 2,
                 1,
                 ZonedDateTime.now(ZoneOffset.UTC).plusSeconds(40),
-                new QuestionResponse("Rogue One", "Robert Duvall", "Open Range", false, true)
+                new QuestionResponse("Rogue One", 2016, "Robert Duvall", 1931, "Open Range", false, true)
         );
         when(gameService.useToken(id, com.graphragmoviequiz.api.web.model.TokenType.GRAPH_RAG))
                 .thenReturn(game);

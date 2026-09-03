@@ -4,7 +4,9 @@ The purpose of the game is to explain and showcase the power of GraphRAG
 over traditional RAG, and also the benefit of them both over non-RAG.
 
 When the game starts the player gets to type their name, and then they
-gets a question in the form "Who in XXX starred in another movie with YYY?". 
+gets a question in the form "Who in XXX (xxxx) starred in another movie with
+YYY (born yyyy)?", where xxxx is the movie's release year and yyyy is the
+person's birth year.
 
 The player can enter their answer in a text field, which starts to get
 populated with possible actors in the database whos name starts with what

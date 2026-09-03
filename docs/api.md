@@ -29,7 +29,9 @@ Response: `201 Created` with a `Location` header pointing to the new game.
   "questionDeadline": "2026-09-01T09:30:40Z",
   "question": {
     "movie": "Rogue One",
+    "movieYear": 2016,
     "person": "Robert Duvall",
+    "personBorn": 1931,
     "connectionMovie": null,
     "ragUsed": false,
     "graphRagUsed": false
@@ -86,7 +88,9 @@ question:
     "questionDeadline": "2026-09-01T09:31:20Z",
     "question": {
       "movie": "Arrival",
+      "movieYear": 2016,
       "person": "Jeremy Renner",
+      "personBorn": 1971,
       "connectionMovie": null,
       "ragUsed": false,
       "graphRagUsed": false

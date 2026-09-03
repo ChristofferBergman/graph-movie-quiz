@@ -42,7 +42,7 @@ class GameServiceTests {
     @Test
     void createsGameAndFirstQuestion() {
         var game = gameWithScore(0);
-        var question = new CurrentQuestion("Rogue One", "Robert Duvall", "Open Range");
+        var question = new CurrentQuestion("Rogue One", 2016, "Robert Duvall", 1931, "Open Range");
         when(games.create("Chris")).thenReturn(game);
         when(questions.replaceForGame(game.id())).thenReturn(question);
         when(games.update(any(Game.class))).thenAnswer(invocation ->
@@ -55,7 +55,9 @@ class GameServiceTests {
         assertThat(response.id()).isEqualTo(game.id());
         assertThat(response.player()).isEqualTo("Chris");
         assertThat(response.question().movie()).isEqualTo("Rogue One");
+        assertThat(response.question().movieYear()).isEqualTo(2016);
         assertThat(response.question().person()).isEqualTo("Robert Duvall");
+        assertThat(response.question().personBorn()).isEqualTo(1931);
         assertThat(response.questionDeadline()).isAfter(game.lastActivity());
     }
 
@@ -72,7 +74,7 @@ class GameServiceTests {
     @Test
     void correctAnswerIncrementsScoreAndReturnsNextQuestion() {
         var game = gameWithScore(2);
-        var nextQuestion = new CurrentQuestion("Arrival", "Jeremy Renner", "The Hurt Locker");
+        var nextQuestion = new CurrentQuestion("Arrival", 2016, "Jeremy Renner", 1971, "The Hurt Locker");
         when(games.findById(game.id())).thenReturn(Optional.of(game));
         when(questions.findAnswerForGame(game.id())).thenReturn(Optional.of("Diego Luna"));
         when(games.update(any(Game.class))).thenAnswer(invocation ->
@@ -153,7 +155,7 @@ class GameServiceTests {
                 new TokenUseResult(TokenUseResult.Status.APPLIED, updated)
         ));
         when(questions.findForGame(game.id())).thenReturn(Optional.of(
-                new CurrentQuestion("Rogue One", "Robert Duvall", "Open Range")
+                new CurrentQuestion("Rogue One", 2016, "Robert Duvall", 1931, "Open Range")
         ));
 
         var response = service().useToken(game.id(), TokenType.GRAPH_RAG);
@@ -184,7 +186,7 @@ class GameServiceTests {
                 new TokenUseResult(TokenUseResult.Status.ALREADY_USED, game)
         ));
         when(questions.findForGame(game.id())).thenReturn(Optional.of(
-                new CurrentQuestion("Rogue One", "Robert Duvall", "Open Range")
+                new CurrentQuestion("Rogue One", 2016, "Robert Duvall", 1931, "Open Range")
         ));
 
         var response = service().useToken(game.id(), TokenType.RAG);

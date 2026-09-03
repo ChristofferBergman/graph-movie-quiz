@@ -28,7 +28,9 @@ public class Neo4jQuestionRepository implements QuestionRepository {
                    elementId(m1) AS m1ElementId,
                    elementId(m2) AS m2ElementId,
                    p1.name AS person,
+                   p1.born AS personBorn,
                    m2.title AS movie,
+                   m2.year AS movieYear,
                    m1.title AS connectionMovie
             LIMIT 1
             """;
@@ -57,7 +59,9 @@ public class Neo4jQuestionRepository implements QuestionRepository {
             MATCH (g)-[:QUESTION_PERSON]->(person:Person)
             MATCH (g)-[:CLUE_MOVIE]->(connectionMovie:Movie)
             RETURN movie.title AS movie,
+                   movie.year AS movieYear,
                    person.name AS person,
+                   person.born AS personBorn,
                    connectionMovie.title AS connectionMovie
             """;
 
@@ -128,7 +132,9 @@ public class Neo4jQuestionRepository implements QuestionRepository {
     private CurrentQuestion mapQuestion(Record record) {
         return new CurrentQuestion(
                 record.get("movie").asString(),
+                record.get("movieYear").asInt(),
                 record.get("person").asString(),
+                record.get("personBorn").asInt(),
                 record.get("connectionMovie").asString()
         );
     }

@@ -1,5 +1,8 @@
 See GraphRAG Movie Quiz mockups.pdf for mockups of the screens.
 
+Questions are displayed as "Who in XXX (xxxx) starred in another movie with
+YYY (born yyyy)?", using the movie's release year and the person's birth year.
+
 The backside and frontside of the cards will be provided as PNG images.
 The text on the cards should be rendered with this font:
 "Syne Neo", MEDIUM, 42

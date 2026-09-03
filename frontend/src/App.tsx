@@ -573,8 +573,9 @@ function GameScreen({
         </Typography>
 
         <Typography as="h2" variant="title-3">
-          Who in {game.question.movie} starred in another movie with{' '}
-          {game.question.person}?
+          Who in {game.question.movie} ({game.question.movieYear}) starred in
+          another movie with {game.question.person} (born{' '}
+          {game.question.personBorn})?
         </Typography>
 
         <div className="answer-area">

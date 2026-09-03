@@ -7,28 +7,17 @@ The query used to find the next question is:
 CYPHER 25
 MATCH (p1:Person)-[a1:ACTED_IN]->(m1:Movie)<-[a2:ACTED_IN]-(p2:Person)-[a3:ACTED_IN]->(m2:Movie)
 WHERE p1 <> p2 AND m1 <> m2 AND a1.order < 6 AND a2.order < 6 AND a3.order < 6
-WITH p1, p2, m1, m2 ORDER BY rand()
-
-CALL(p1, p2, m1, m2) {
-  UNWIND CASE
-    WHEN NOT EXISTS {
-      (p1)-[:ACTED_IN]->(:Movie)<-[:ACTED_IN]-(p3:Person)-[:ACTED_IN]->(m2)
-      WHERE p3 <> p1 AND p3 <> p2
-    } THEN [0]
-    ELSE []
-    END AS divisor
-  RETURN 1 / divisor AS forceError
-} IN TRANSACTIONS OF 1 ROW ON ERROR BREAK REPORT STATUS AS transactionStatus
-
-WITH p1, p2, m1, m2, transactionStatus
-WHERE transactionStatus.started = TRUE AND transactionStatus.committed = FALSE
-
+WITH * ORDER BY rand()
+WITH * WHERE NOT EXISTS {
+  (p1)-[:ACTED_IN]->(:Movie)<-[:ACTED_IN]-(p3:Person)-[:ACTED_IN]->(m2)
+  WHERE p3 <> p1 AND p3 <> p2
+}
 RETURN p1, p2, m1, m2 LIMIT 1
 ```
 
 The question to form from that query is:
-"Who in *m2* starred in another movie with *p1*?"
-And the answer is: *p2*
+"Who in *m2* (*m2.year*) starred in another movie with *p1* (born
+*p1.born*)?"And the answer is: *p2*
 *m1* Is used when the GraphRAG token is played (see product_vision.md)
 
 When showing clues for either *m1* or *m2* use this query:
