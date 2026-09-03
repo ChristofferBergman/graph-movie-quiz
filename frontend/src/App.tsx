@@ -426,7 +426,7 @@ function StartScreen({ isLoading, onStart }: StartScreenProps) {
           isDisabled={isLoading}
           isFluid
           isRequired
-          htmlAttributes={{ autoComplete: 'name', maxLength: 50 }}
+          htmlAttributes={{ autoComplete: 'name', autoFocus: true, maxLength: 50 }}
         />
         <FilledButton
           type="submit"

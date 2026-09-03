@@ -34,6 +34,9 @@ option and Enter should select the highlighted option. Escape closes the
 suggestions.
 The API for submitting an answer should only take the name.
 
+The player name field on the create-game screen should receive focus whenever
+that screen is shown, including after choosing to play again.
+
 The frontend will get the UUID of the game and need to remember that.
 If the brower is refreshed it should fetch the same game and show the
 game state as it was (if the game still exists).

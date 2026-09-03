@@ -17,6 +17,7 @@ describe('App', () => {
       screen.getByRole('heading', { name: 'GraphRAG Online Movie Quiz' }),
     ).toBeInTheDocument()
     expect(screen.getByLabelText('Powered by Neo4j')).toBeInTheDocument()
+    expect(screen.getByLabelText('Player name')).toHaveFocus()
   })
 
   it('opens and closes the instructions without closing on a scroll gesture', async () => {
@@ -188,7 +189,7 @@ describe('App', () => {
     expect(localStorage.getItem('graphrag-movie-quiz.game-id')).toBeNull()
 
     await user.click(screen.getByRole('button', { name: 'Play again' }))
-    expect(screen.getByLabelText('Player name')).toBeInTheDocument()
+    expect(screen.getByLabelText('Player name')).toHaveFocus()
   })
 
   it('uses a RAG token, unlocks the question clue, flips it, and zooms it', async () => {
