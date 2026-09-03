@@ -17,21 +17,11 @@ public class Neo4jQuestionRepository implements QuestionRepository {
             CYPHER 25
             MATCH (p1:Person)-[a1:ACTED_IN]->(m1:Movie)<-[a2:ACTED_IN]-(p2:Person)-[a3:ACTED_IN]->(m2:Movie)
             WHERE p1 <> p2 AND m1 <> m2 AND a1.order < 6 AND a2.order < 6 AND a3.order < 6
-            WITH p1, p2, m1, m2 ORDER BY rand()
-
-            CALL(p1, p2, m1, m2) {
-              UNWIND CASE
-                WHEN NOT EXISTS {
-                  (p1)-[:ACTED_IN]->(:Movie)<-[:ACTED_IN]-(p3:Person)-[:ACTED_IN]->(m2)
-                  WHERE p3 <> p1 AND p3 <> p2
-                } THEN [0]
-                ELSE []
-                END AS divisor
-              RETURN 1 / divisor AS forceError
-            } IN TRANSACTIONS OF 1 ROW ON ERROR BREAK REPORT STATUS AS transactionStatus
-
-            WITH p1, p2, m1, m2, transactionStatus
-            WHERE transactionStatus.started = TRUE AND transactionStatus.committed = FALSE
+            WITH * ORDER BY rand()
+            WITH * WHERE NOT EXISTS {
+              (p1)-[:ACTED_IN]->(:Movie)<-[:ACTED_IN]-(p3:Person)-[:ACTED_IN]->(m2)
+              WHERE p3 <> p1 AND p3 <> p2
+            }
 
             RETURN elementId(p1) AS p1ElementId,
                    elementId(p2) AS p2ElementId,
