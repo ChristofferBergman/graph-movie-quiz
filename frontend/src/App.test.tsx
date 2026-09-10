@@ -41,6 +41,11 @@ describe('App', () => {
     fireEvent.pointerUp(dialog, { clientX: 10, clientY: 10 })
     expect(dialog).toBeInTheDocument()
 
+    const instructionsLink = screen.getByRole('link', { name: 'IMDB statistics' })
+    fireEvent.pointerDown(instructionsLink, { clientX: 10, clientY: 10 })
+    fireEvent.pointerUp(instructionsLink, { clientX: 10, clientY: 10 })
+    expect(dialog).toBeInTheDocument()
+
     fireEvent.pointerDown(dialog, { clientX: 10, clientY: 10 })
     fireEvent.pointerUp(dialog, { clientX: 10, clientY: 10 })
     expect(screen.queryByRole('dialog', { name: 'Instructions' })).not.toBeInTheDocument()

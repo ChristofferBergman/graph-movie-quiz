@@ -366,8 +366,13 @@ function InstructionsDialog({
           pointerMovedRef.current = true
         }
       }}
-      onPointerUp={() => {
-        if (!pointerMovedRef.current) onClose()
+      onPointerUp={(event) => {
+        if (
+          event.target === event.currentTarget &&
+          !pointerMovedRef.current
+        ) {
+          onClose()
+        }
         pointerStartRef.current = null
       }}
       onPointerCancel={() => {
