@@ -143,6 +143,65 @@ gcloud run deploy graphrag-movie-quiz-backend \
 
 Cloud Run keeps the existing service account, environment variables, and Secret Manager mappings unless they are explicitly changed. Include `--set-env-vars` or `--set-secrets` again only when changing configuration.
 
+## Cloud Run Backend: Update Configuration
+
+Use these steps when the Cloud Run service already exists and only an environment
+variable or Secret Manager value needs to change. The example below switches the
+backend to another Neo4j instance by updating `NEO4J_URI` and
+`NEO4J_PASSWORD`; it does not rebuild the backend source.
+
+Run these commands from the repository root unless otherwise stated.
+
+1. Make sure the project and region are selected:
+
+```bash
+gcloud config set project graphrag-movie-quiz
+gcloud config set run/region europe-west1
+```
+
+2. Add the new password as a new version of the existing Secret Manager secret:
+
+```bash
+read -s NEO4J_PASSWORD_VALUE
+printf %s "$NEO4J_PASSWORD_VALUE" |
+  gcloud secrets versions add NEO4J_PASSWORD --data-file=-
+unset NEO4J_PASSWORD_VALUE
+```
+
+This preserves the older secret versions so they can be selected again if a
+rollback is needed. Do not create another `NEO4J_PASSWORD` secret; add a version
+to the existing secret.
+
+3. Update both settings on the Cloud Run service:
+
+```bash
+gcloud run services update graphrag-movie-quiz-backend \
+  --region europe-west1 \
+  --update-env-vars NEO4J_URI="neo4j+s://<new-instanceid>.databases.neo4j.io" \
+  --update-secrets NEO4J_PASSWORD=NEO4J_PASSWORD:latest
+```
+
+Cloud Run creates a new revision without rebuilding the application. Using the
+`--update-*` flags preserves the service's other environment variables and
+secret mappings. Adding the secret version before updating the service ensures
+that the new revision resolves `latest` to the new password when its container
+starts.
+
+4. Verify that the new revision becomes ready:
+
+```bash
+SERVICE_URL="$(gcloud run services describe graphrag-movie-quiz-backend \
+  --region europe-west1 \
+  --format='value(status.url)')"
+
+curl --fail --show-error "$SERVICE_URL/actuator/health/readiness"
+```
+
+If the revision fails its readiness check, inspect its Cloud Run logs and verify
+that the URI and password belong to the same Neo4j instance. Switching instances
+also means that active games and high scores stored in the old Neo4j database are
+not available from the new instance unless that data has been migrated.
+
 ## GitHub Pages Frontend
 
 1. Vite is configured to use `/graph-movie-quiz/` as its production build

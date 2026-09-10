@@ -39,7 +39,7 @@
 <h4>Where do the questions come from?</h4>
 <p>
     As stated above there are over half a million questions in the game, but they are not predefined. Instead the game is backed by
-    a Neo4j graph database containing all famous (see below) movies and actors from the public imdb dataset, with a schema like this:<br><br>
+    a Neo4j graph database containing all famous (see below) movies and actors from Wikipedia, with a schema like this:<br><br>
     <code>(:Person)-[:ACTED_IN|:DIRECTED|:PRODUCED|:COMPOSED|:WRITTEN]->(:Movie)</code><br><br>
     Every time a question is asked the system will find a random pattern in the following form:<br><br>
     <code>MATCH (p1:Person)-[a1:ACTED_IN]->(m1:Movie)<-[a2:ACTED_IN]-(p2:Person)-[a3:ACTED_IN]->(m2:Movie)</code><br><br>
@@ -55,16 +55,12 @@
 </p>
 <h4>What is a famous movie and actor?</h4>
 <p>
-    There are about 13 million movies, series, episodes, specials, video games in the public imdb dataset, and about 18 million persons.
+    There are about 750,000 movies ever made and about 60 million actors from all corners of the world (according to
+    <a href="https://www.imdb.com/pressroom/stats/" target="_blank">IMDB statistics</a>).
     Including all of these would make the game extremely hard (it is, as you will see, hard enough as it is). Therefore we have included
-    only movies, and only if they have been determined to be famous, which means:<br><br>
-    <li>It has at least 1000 votes on IMDB</li>
-    <li>It has an English Wikipedia page, as well as at least 25 pages in other languages</li>
-    <li>It is not an adult movie</li><br>
-    An actor is considered famous if:<br><br>
-    <li>It has a "Known For" connecting it to at least one famous movie</li>
-    <li>It has an English Wikipedia page, as well as at least 25 pages in other languages.</li><br>
+    only movies and actors if they have been determined to be famous, which means that they must have an English Wikipedia page, as well
+    as at least 25 pages in other languages.<br><br>
     What this means is that there may be a different answer to a question. It could be that someone else from XXX participated with YYY,
     but in a movie that wasn't deemed famous, and thus will not be included in the game.<br><br>
-    <b>An important thing to note is that the movie data was pulled on June 15th 2026, so only movies before that are included in the game.</b>
+    <b>An important thing to note is that the movie data was pulled on August 28th 2026, so only movies before that are included in the game.</b>
 </p>
