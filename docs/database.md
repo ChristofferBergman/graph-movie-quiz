@@ -29,13 +29,22 @@ WITH p ORDER BY a.order
 RETURN DISTINCT p.name LIMIT 5
 ```
 
-The query used to populate possible answers when the user has types at least
-two characters should be:
+The query used to populate possible answers when the user has typed at least
+two characters uses the `person_name_autocomplete` full-text index. The
+`standard-folding` analyzer makes matching case- and accent-insensitive, while
+full-text tokenization allows a match to start at any part of the name:
 
 ```cypher
-MATCH (p:Person) WHERE p.searchName STARTS WITH toLower($typed)
-RETURN p.name LIMIT 5
+CALL db.index.fulltext.queryNodes('person_name_autocomplete', $query)
+YIELD node AS person
+RETURN DISTINCT person.name AS name
+ORDER BY toLower(name), name
+LIMIT 5
 ```
+
+The application constructs `$query` from escaped user input, using a prefix
+query for each term and a one-edit fuzzy alternative for terms of four or more
+characters.
 
 Since the backend runs on a Google Cloud Run instane that cannot keep the game state
 in RAM we will also use the Neo4j instance for that. When a player starts a new
