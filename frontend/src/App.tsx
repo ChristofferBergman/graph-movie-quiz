@@ -44,6 +44,7 @@ const GAME_ID_STORAGE_KEY = 'graphrag-movie-quiz.game-id'
 
 function App() {
   const [game, setGame] = useState<Game | null>(null)
+  const [playerName, setPlayerName] = useState<string | null>(null)
   const [finalScore, setFinalScore] = useState<number | null>(null)
   const [correctAnswer, setCorrectAnswer] = useState<string | null>(null)
   const [highScores, setHighScores] = useState<HighScoreEntry[]>([])
@@ -65,6 +66,7 @@ function App() {
         const loadedHighScores = await getHighScoresSafely()
         if (isActive) {
           setGame(loadedGame)
+          setPlayerName(loadedGame.player)
           setHighScores(loadedHighScores)
         }
       })
@@ -102,6 +104,7 @@ function App() {
       const loadedHighScores = await getHighScoresSafely()
       localStorage.setItem(GAME_ID_STORAGE_KEY, createdGame.id)
       setGame(createdGame)
+      setPlayerName(createdGame.player)
       setHighScores(loadedHighScores)
       setFinalScore(null)
       setCorrectAnswer(null)
@@ -211,9 +214,7 @@ function App() {
   }
 
   function handleRestart() {
-    setFinalScore(null)
-    setCorrectAnswer(null)
-    setError(null)
+    if (playerName) void handleStart(playerName)
   }
 
   return (
@@ -250,6 +251,7 @@ function App() {
             <GameOverScreen
               score={finalScore}
               correctAnswer={correctAnswer}
+              isLoading={isLoading}
               onRestart={handleRestart}
             />
             <div aria-hidden="true" />
@@ -449,10 +451,12 @@ function StartScreen({ isLoading, onStart }: StartScreenProps) {
 function GameOverScreen({
   score,
   correctAnswer,
+  isLoading,
   onRestart,
 }: {
   score: number
   correctAnswer: string | null
+  isLoading: boolean
   onRestart: () => void
 }) {
   return (
@@ -466,7 +470,12 @@ function GameOverScreen({
           The correct answer was {correctAnswer}.
         </Typography>
       )}
-      <FilledButton type="button" onClick={onRestart}>
+      <FilledButton
+        type="button"
+        isLoading={isLoading}
+        loadingMessage="Starting new game"
+        onClick={onRestart}
+      >
         Play again
       </FilledButton>
     </div>

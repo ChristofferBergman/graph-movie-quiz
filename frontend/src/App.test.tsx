@@ -164,8 +164,12 @@ describe('App', () => {
     expect(localStorage.getItem('graphrag-movie-quiz.game-id')).toBeNull()
   })
 
-  it('shows game over and supports restarting after an incorrect answer', async () => {
+  it('starts a new game with the same player after an incorrect answer', async () => {
     const game = createTestGame({ score: 2 })
+    const newGame = {
+      ...createTestGame(),
+      id: '65793c25-13da-4f34-97e2-f36ddc26434a',
+    }
     localStorage.setItem('graphrag-movie-quiz.game-id', game.id)
     const fetchMock = vi
       .fn()
@@ -179,6 +183,8 @@ describe('App', () => {
           game: null,
         }),
       )
+      .mockResolvedValueOnce(jsonResponse([{ player: 'Chris', score: 2 }]))
+      .mockResolvedValueOnce(jsonResponse(newGame, { status: 201 }))
       .mockResolvedValueOnce(jsonResponse([{ player: 'Chris', score: 2 }]))
     vi.stubGlobal('fetch', fetchMock)
     const user = userEvent.setup()
@@ -194,7 +200,16 @@ describe('App', () => {
     expect(localStorage.getItem('graphrag-movie-quiz.game-id')).toBeNull()
 
     await user.click(screen.getByRole('button', { name: 'Play again' }))
-    expect(screen.getByLabelText('Player name')).toHaveFocus()
+    expect(await screen.findByLabelText('Your answer')).toBeInTheDocument()
+    expect(screen.queryByLabelText('Player name')).not.toBeInTheDocument()
+    expect(localStorage.getItem('graphrag-movie-quiz.game-id')).toBe(newGame.id)
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://localhost:8080/api/v1/games',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ player: 'Chris' }),
+      }),
+    )
   })
 
   it('uses a RAG token, unlocks the question clue, flips it, and zooms it', async () => {
